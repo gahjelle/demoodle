@@ -1,0 +1,1 @@
+"""Demoodle test suite."""

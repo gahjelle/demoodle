@@ -8,7 +8,7 @@
 
 ## Milestone 0 — Foundations (pure core types & seams)
 
-### W1. Project skeleton & tooling
+### ✅ W1. Project skeleton & tooling 
 - **Goal:** empty but importable package with the directory layout from the
   Day-One doc, plus test/lint/format config.
 - **Build:** `demoodle/` packages with `__init__.py`, `pyproject.toml`, PyTorch

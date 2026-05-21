@@ -1,2 +1,8 @@
+"""Demoodle — a pedagogical, runnable LLM demo."""
+
+from demoodle.frontends.cli import app
+
+
 def main() -> None:
-    print("Hello from demoodle!")
+    """Entry point."""
+    app()

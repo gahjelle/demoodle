@@ -7,8 +7,11 @@ rules:
   proposal:
     - "Keep proposals under 800 words"
     - "Always include a 'Non-goals' section"
+  design:
+    - "Always list open questions. If there are none, explicitly say so"
   tasks:
     - "Break tasks into small, actionable chunks"
+    - "Prefer red-green test-driven development"
     - "Always include verification tasks: ruff format, ruff check, ty check, and
       pytest. Run ruff and ty on both src/ and tests/"
     - "Always review documentation and update if necessary: Read README.md,
