@@ -227,16 +227,16 @@ teaching material.
 
 ## 5. What Each Stage Demonstrates (the payoff)
 
-| Stage | The "aha" |
-|---|---|
-| Count bigram | A model is just P(next \| current). Sampling = generation. |
-| Learned bigram | Same table, but reached by gradient descent. Watch loss fall. |
-| MLP | Context and embeddings let it look back further. |
-| Transformer | Attention; `explain()` renders which positions attend where. |
-| Char→BPE | Merges build vocab live; same prompt re-segments; sequences shorten; the "count the r's" failure becomes explainable. |
-| Pretrain→SFT | Format/behavior can be shaped with a few curated examples. |
-| Reward model | Preferences become a learned scalar; visualize RM scores. |
-| RLHF/DPO | Policy drifts toward reward while KL to the frozen reference holds it back. Show reward ↑ and KL, side by side. |
+| Stage          | The "aha"                                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Count bigram   | A model is just P(next \| current). Sampling = generation.                                                            |
+| Learned bigram | Same table, but reached by gradient descent. Watch loss fall.                                                         |
+| MLP            | Context and embeddings let it look back further.                                                                      |
+| Transformer    | Attention; `explain()` renders which positions attend where.                                                          |
+| Char→BPE       | Merges build vocab live; same prompt re-segments; sequences shorten; the "count the r's" failure becomes explainable. |
+| Pretrain→SFT   | Format/behavior can be shaped with a few curated examples.                                                            |
+| Reward model   | Preferences become a learned scalar; visualize RM scores.                                                             |
+| RLHF/DPO       | Policy drifts toward reward while KL to the frozen reference holds it back. Show reward ↑ and KL, side by side.       |
 
 ---
 
@@ -245,7 +245,7 @@ teaching material.
 All consume the same shell API; none touch core.
 - **CLI** — train a graph, run `call` with temperature, dump metrics. Day-one target.
 - **Notebook** — same calls, inline plots (loss curves, attention heatmaps, BPE merges).
-- **Web** — interactive: pick architecture/tokenizer/training axis, type a prompt,
+- **TUI** — interactive: pick architecture/tokenizer/training axis, type a prompt,
   watch token-by-token probabilities and (where available) attention. The
   "showpiece" front end.
 

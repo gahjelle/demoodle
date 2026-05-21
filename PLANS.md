@@ -4,6 +4,8 @@
 > Each lists **goal · build · done-when · depends-on**. Implement top to bottom;
 > within a milestone, order matters less. Milestones M0–M2 are the day-one slice.
 
+See VISION.md for information about the final vision, the end-goal.
+
 ---
 
 ## Milestone 0 — Foundations (pure core types & seams)
@@ -18,12 +20,17 @@
 
 ### W2. Core value types
 - **Goal:** the immutable data spine.
-- **Build:** in `core/types.py`: `Config` (frozen dataclass), `Seq` alias,
-  `Output` (logits + optional sampled ids), and the `Artifact` tagged union with
-  variants `Corpus`, `Tokenizer`, `Dataset`, `Policy`, `Metrics` (leave
-  `RewardModel`, `PreferenceData` as stubs/comments for later). **`Policy` must
-  include an optional, nullable `value_head` field (`None` by default)** — reserved
-  for PPO so we never retrofit architectures later.
+- **Build:** in `core/types.py`: `Seq` alias, `Output` (logits + optional sampled
+  ids), and the `Artifact` tagged union with variants `Corpus`, `Tokenizer`,
+  `Dataset`, `Policy`, `Metrics` (leave `RewardModel`, `PreferenceData` as
+  stubs/comments for later). **`Policy` must include an optional, nullable
+  `value_head` field (`None` by default)** — reserved for PPO so we never retrofit
+  architectures later.
+- **Note:** `Config` is **not** a frozen dataclass here. Configuration is handled
+  by `demoodle.config` (pydantic + configaroo). Import with
+  `from demoodle.config import config`, or pass section models directly (e.g.
+  `MLPConfig`) into `init_state()`. See `src/demoodle/config/` and
+  `openspec/changes/config-scaffolding/` for details.
 - **Done when:** types import; a trivial test constructs each and confirms they're
   frozen/immutable.
 - **Depends on:** W1

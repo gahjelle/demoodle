@@ -1,6 +1,6 @@
 # Demoodle - Demonstrate how (Large) Language Models are built
 
-This is a Python 3.14+ project that uses `uv` for package management. Always use `uv run ...` instead of `python3 ...` to run any Python code.
+This is a Python 3.14+ project that uses `uv` for package management. Always use `uv run ...` instead of `python3 ...` to run any Python code. Use `uv add ...` when adding dependencies. Don't edit `pyproject.toml` manually.
 
 ## Development Commands
 
@@ -39,4 +39,4 @@ uv run ty check .
 
 You can find more information about the project inside agents/
 
-Read and write files inside agents/ as necessary. Never add more information to this file.
+Read and write files inside agents/ as necessary. Never add more information to this `AGENTS.md` file.
