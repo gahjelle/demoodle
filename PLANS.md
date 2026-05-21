@@ -18,7 +18,7 @@ See VISION.md for information about the final vision, the end-goal.
 - **Done when:** `uv sync` works and `pytest` runs (even with 0 tests).
 - **Depends on:** —
 
-### W2. Core value types
+### ✅ W2. Core value types
 - **Goal:** the immutable data spine.
 - **Build:** in `core/types.py`: `Seq` alias, `Output` (logits + optional sampled
   ids), and the `Artifact` tagged union with variants `Corpus`, `Tokenizer`,

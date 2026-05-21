@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 580" font-family="monospace" font-size="13">
+  <!-- Title -->
+  <text x="210" y="24" text-anchor="middle" font-size="15" font-weight="bold">Transformer Block (one layer)</text>
+
+  <!-- Input -->
+  <rect x="130" y="44" width="160" height="36" rx="6" fill="#e8f4f8" stroke="#4a90d9" stroke-width="1.5"/>
+  <text x="210" y="67" text-anchor="middle">Input embeddings</text>
+  <text x="210" y="82" text-anchor="middle" font-size="10" fill="#666">[seq_len × emb_dim]</text>
+
+  <!-- Arrow down -->
+  <line x1="210" y1="86" x2="210" y2="106" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Layer Norm 1 -->
+  <rect x="155" y="106" width="110" height="30" rx="5" fill="#fff8e1" stroke="#f0a500" stroke-width="1.5"/>
+  <text x="210" y="125" text-anchor="middle">LayerNorm</text>
+
+  <!-- Arrow down -->
+  <line x1="210" y1="136" x2="210" y2="154" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Multi-Head Attention box -->
+  <rect x="100" y="154" width="220" height="80" rx="6" fill="#f0f7ff" stroke="#4a90d9" stroke-width="1.5"/>
+  <text x="210" y="178" text-anchor="middle" font-weight="bold">Multi-Head Attention</text>
+
+  <!-- Q K V labels inside -->
+  <rect x="115" y="186" width="40" height="24" rx="4" fill="#d0e8ff" stroke="#4a90d9"/>
+  <text x="135" y="202" text-anchor="middle">Q</text>
+  <rect x="190" y="186" width="40" height="24" rx="4" fill="#d0e8ff" stroke="#4a90d9"/>
+  <text x="210" y="202" text-anchor="middle">K</text>
+  <rect x="265" y="186" width="40" height="24" rx="4" fill="#d0e8ff" stroke="#4a90d9"/>
+  <text x="285" y="202" text-anchor="middle">V</text>
+
+  <!-- Residual connection line (left side) -->
+  <line x1="100" y1="172" x2="60" y2="172" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="60" y1="172" x2="60" y2="278" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="60" y1="278" x2="170" y2="278" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-gray)"/>
+  <text x="38" y="226" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-90,38,226)">residual</text>
+
+  <!-- Arrow down from attention -->
+  <line x1="210" y1="234" x2="210" y2="252" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Add & Norm 1 -->
+  <rect x="155" y="252" width="110" height="30" rx="5" fill="#f3e8ff" stroke="#9b59b6" stroke-width="1.5"/>
+  <text x="210" y="271" text-anchor="middle">Add &amp; Norm</text>
+
+  <!-- Arrow down -->
+  <line x1="210" y1="282" x2="210" y2="300" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Layer Norm 2 -->
+  <rect x="155" y="300" width="110" height="30" rx="5" fill="#fff8e1" stroke="#f0a500" stroke-width="1.5"/>
+  <text x="210" y="319" text-anchor="middle">LayerNorm</text>
+
+  <!-- Arrow down -->
+  <line x1="210" y1="330" x2="210" y2="348" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- MLP block -->
+  <rect x="120" y="348" width="180" height="70" rx="6" fill="#f0fff4" stroke="#27ae60" stroke-width="1.5"/>
+  <text x="210" y="372" text-anchor="middle" font-weight="bold">Position-wise MLP</text>
+  <text x="210" y="390" text-anchor="middle" font-size="11">Linear → GeLU → Linear</text>
+  <text x="210" y="408" text-anchor="middle" font-size="10" fill="#666">applied to each position</text>
+
+  <!-- Residual connection (right side) -->
+  <line x1="320" y1="366" x2="360" y2="366" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="360" y1="366" x2="360" y2="464" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="360" y1="464" x2="250" y2="464" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-gray)"/>
+  <text x="382" y="416" text-anchor="middle" font-size="10" fill="#888" transform="rotate(90,382,416)">residual</text>
+
+  <!-- Arrow down from MLP -->
+  <line x1="210" y1="418" x2="210" y2="436" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Add & Norm 2 -->
+  <rect x="155" y="436" width="110" height="30" rx="5" fill="#f3e8ff" stroke="#9b59b6" stroke-width="1.5"/>
+  <text x="210" y="455" text-anchor="middle">Add &amp; Norm</text>
+
+  <!-- Arrow down -->
+  <line x1="210" y1="466" x2="210" y2="484" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Output -->
+  <rect x="130" y="484" width="160" height="36" rx="6" fill="#e8f4f8" stroke="#4a90d9" stroke-width="1.5"/>
+  <text x="210" y="507" text-anchor="middle">Output embeddings</text>
+  <text x="210" y="522" text-anchor="middle" font-size="10" fill="#666">[seq_len × emb_dim]</text>
+
+  <!-- Repeat note -->
+  <text x="210" y="558" text-anchor="middle" font-size="11" fill="#555">↑ repeated for each of n_layers layers ↑</text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+    <marker id="arr-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#aaa"/>
+    </marker>
+  </defs>
+</svg>

@@ -30,7 +30,7 @@ uv run ty check .
 ## General Code Principles
 
 - Functional Core/Imperative Shell architecture
-- Always prefer immutable operations over mutable
+- Always prefer immutable operations over mutable. Use `list` not `tuple` for homogeneous sequences, but prefer immutable operations.
 - Comments explain why, not what. Do not add signature information to docstrings
 - Ruff for linting and formatting with all rules enabled only COM812, D203, D213 are disabled. Use inline overrides only when truly necessary
 - Type checker is `ty` (not `mypy`), use `# ty: ignore[<code>]` if suppression is ever needed, never `# type: ignore[<mypy-code>]`
