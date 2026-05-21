@@ -1,0 +1,15 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Python, uv, textual, cyclopts
+
+rules:
+  proposal:
+    - "Keep proposals under 800 words"
+    - "Always include a 'Non-goals' section"
+  tasks:
+    - "Break tasks into small, actionable chunks"
+    - "Always include verification tasks: ruff format, ruff check, ty check, and
+      pytest. Run ruff and ty on both src/ and tests/"
+    - "Always review documentation and update if necessary: Read README.md,
+      PLANS.md, MODELS.md and files inside agents/ and update whatever is necessary."

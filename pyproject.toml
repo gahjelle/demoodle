@@ -1,0 +1,21 @@
+[build-system]
+requires = ["uv_build>=0.10.0,<0.12.0"]
+build-backend = "uv_build"
+
+[project]
+name = "demoodle"
+version = "0.1.0"
+description = "Demoonstrate how (Large) Language Models are created"
+readme = "README.md"
+authors = [{ name = "Geir Arne Hjelle", email = "geirarne@gmail.com" }]
+requires-python = ">=3.14"
+dependencies = [
+    "configaroo>=0.6.1",
+    "cyclopts>=4.15.0",
+    "rich>=15.0.0",
+    "textual>=8.2.7",
+]
+
+[project.scripts]
+demoodle = "demoodle:main"
+demoo = "demoodle.frontends.cli:app"
