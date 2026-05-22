@@ -1,6 +1,6 @@
 # Core Foundation: Types, RNG, Protocols, and Runner (W2–W6)
 
-This file captures design decisions and gotchas from the first three substantive work items. Read it before implementing anything that touches `core/` or `ports/`.
+This file captures design decisions and gotchas from the first substantive work items. Read it before implementing anything that touches `core/` or `ports/`.
 
 ---
 
@@ -40,11 +40,11 @@ Do not conflate them. `RNG` is not an `Artifact`. Protocols are not artifacts. T
 
 Every protocol has a `Protocol` suffix to avoid shadowing the artifact type of the same name:
 
-| Artifact (`core.types`)           | Protocol (`ports.protocols`) |
-|-----------------------------------|------------------------------|
-| `CharTokenizer`, `BpeTokenizer`   | `TokenizerProtocol`          |
-| *(no artifact)*                   | `ArchitectureProtocol`       |
-| *(no artifact)*                   | `InspectableProtocol`        |
+| Artifact (`core.types`)         | Protocol (`ports.protocols`) |
+| ------------------------------- | ---------------------------- |
+| `CharTokenizer`, `BpeTokenizer` | `TokenizerProtocol`          |
+| *(no artifact)*                 | `ArchitectureProtocol`       |
+| *(no artifact)*                 | `InspectableProtocol`        |
 
 Import site is unambiguous:
 - `from demoodle.tokenizers.char import CharTokenizer` → the concrete tokenizer artifact

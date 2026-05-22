@@ -1,7 +1,7 @@
 """Character-level tokenizer and its training stage."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from demoodle.ports.protocols import Stage
 
@@ -35,7 +35,7 @@ def make_train_tokenizer_stage(config_hash: str = "") -> Stage:
     """Return a Stage that builds a CharTokenizer from a corpus artifact."""
 
     def run(artifacts: dict[str, Artifact], _rng: RNG) -> dict[str, Artifact]:
-        corpus: Corpus = artifacts["corpus"]  # ty: ignore[invalid-assignment]
+        corpus = cast("Corpus", artifacts["corpus"])
         char_to_id = {c: i for i, c in enumerate(sorted(set(corpus.text)))}
         return {"tokenizer": CharTokenizer(char_to_id=char_to_id)}
 

@@ -108,7 +108,7 @@ Update future work items based on decisions made.
   `CharTokenizer` artifact via the runner.
 - **Depends on:** W4, W6, W7
 
-### W9. build_dataset stage
+### ✅ W9. build_dataset stage
 - **Goal:** turn text into training pairs.
 - **Build:** stage `(corpus, tokenizer) -> dataset`; encode corpus, form
   (input_char, next_char) pairs (with start/end handling), batchable.

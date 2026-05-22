@@ -11,6 +11,7 @@ rules:
   design:
     - "Use terms as defined in CONTEXT.md"
     - "Always list open questions. If there are none, explicitly say so"
+    - "Consider creating ADRs at docs/adr for important decisions"
   specs:
     - "Keep the scope of specs consistent. Not every change needs to add new specs."
   tasks:
