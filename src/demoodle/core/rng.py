@@ -1,7 +1,5 @@
 """Explicit, immutable RNG for deterministic randomness threading."""
 
-from __future__ import annotations
-
 import hashlib
 from dataclasses import dataclass
 

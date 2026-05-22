@@ -1,7 +1,5 @@
 """Content-addressed artifact cache for the demoodle pipeline."""
 
-from __future__ import annotations
-
 import hashlib
 import subprocess
 from importlib.metadata import version

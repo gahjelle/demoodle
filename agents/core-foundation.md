@@ -1,6 +1,26 @@
-# Core Foundation: Types, RNG, and Protocols (W2–W4)
+# Core Foundation: Types, RNG, Protocols, and Runner (W2–W6)
 
 This file captures design decisions and gotchas from the first three substantive work items. Read it before implementing anything that touches `core/` or `ports/`.
+
+---
+
+## No `from __future__ import annotations`
+
+This project targets Python 3.14, which evaluates annotations lazily by default (PEP 649). Do **not** add `from __future__ import annotations` to any file — it is unnecessary and being phased out.
+
+For `TYPE_CHECKING`-only imports, keep the `if TYPE_CHECKING:` block and use the names unquoted in annotations; the runtime never evaluates them.
+
+```python
+# correct
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from demoodle.core.rng import RNG
+
+def foo(rng: RNG) -> None: ...
+
+# wrong — do not add this
+from __future__ import annotations
+```
 
 ---
 
@@ -94,6 +114,23 @@ Stage(name="pretrain", ..., config_hash=config_hash, run=run)
 ```
 
 Stages whose output is independent of all config pass `config_hash=""` explicitly — this is intentional documentation, not an omission. The cache key (`shell/persistence.py`) combines this hash with the stage name, code version, input artifact hashes, and RNG seed.
+
+---
+
+## Runner public API — `shell/runner.py`
+
+`run(stages, initial_artifacts, rng, cache_dir) → dict[str, Artifact]`
+
+- `stages`: list of `Stage`s in any order — the runner topo-sorts them.
+- `initial_artifacts`: dict of seed artifacts (e.g. a loaded `Corpus`) that no stage produces.
+- `rng`: root `RNG`; the runner splits it once per stage in execution order, unconditionally.
+- `cache_dir`: `Path` to the content-addressed cache directory.
+
+Returns all artifacts: both the initial dict and every stage output merged together.
+
+Raises `ValueError` before any execution if:
+- Two stages declare the same artifact name in `produces`.
+- The graph is unsatisfiable (cycle or genuinely missing artifact) — error message includes each stuck stage name and the artifact names it's waiting for.
 
 ---
 

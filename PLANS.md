@@ -73,7 +73,7 @@ Update future work items based on decisions made.
   changes the key.
 - **Depends on:** W2, W3
 
-### W6. Topo-sort runner
+### ✅ W6. Topo-sort runner
 - **Goal:** execute a stage graph in dependency order with caching.
 - **Build:** `shell/runner.py` — take a list of `Stage`s + initial artifacts
   (e.g. the corpus), topologically sort by `needs`/`produces`, execute each

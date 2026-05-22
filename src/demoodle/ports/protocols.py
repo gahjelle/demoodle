@@ -1,7 +1,5 @@
 """Behavioral protocols and the Stage dataclass — the pipeline's swap points."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol
 

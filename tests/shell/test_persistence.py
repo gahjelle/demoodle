@@ -1,7 +1,5 @@
 """Tests for shell/persistence.py -- content-addressed artifact cache."""
 
-from __future__ import annotations
-
 import subprocess
 from typing import TYPE_CHECKING
 from unittest.mock import patch
