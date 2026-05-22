@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 
 import torch
 
+from demoodle.tokenizers.char import CharTokenizer
+
 type Seq = torch.Tensor  # A 1D integer tensor of token IDs
 
 
@@ -46,6 +48,6 @@ class Metrics:
 
 
 # Artifact is the tagged union of all pipeline values.
-# CharTokenizer (W8) and BpeTokenizer (W17) join when implemented.
+# BpeTokenizer (W18) joins when implemented.
 # RewardModel and PreferenceData will be added in Milestone 5 (W21).
-type Artifact = Corpus | Dataset | Policy | Metrics
+type Artifact = Corpus | CharTokenizer | Dataset | Policy | Metrics

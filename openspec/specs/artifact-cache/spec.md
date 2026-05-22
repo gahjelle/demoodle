@@ -40,6 +40,10 @@ The system SHALL provide `save(key, artifacts, cache_dir)` and `load(key, cache_
 - **WHEN** a `Policy` artifact is saved then loaded with the same key
 - **THEN** the loaded model's state dict equals the original model's state dict
 
+#### Scenario: CharTokenizer round-trips
+- **WHEN** a `CharTokenizer` artifact is saved then loaded with the same key
+- **THEN** the loaded tokenizer has the same `char_to_id` mapping
+
 #### Scenario: Cache miss returns None
 - **WHEN** `load` is called with a key that has never been saved
 - **THEN** it returns `None`

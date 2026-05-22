@@ -40,14 +40,14 @@ Do not conflate them. `RNG` is not an `Artifact`. Protocols are not artifacts. T
 
 Every protocol has a `Protocol` suffix to avoid shadowing the artifact type of the same name:
 
-| Artifact (`core.types`) | Protocol (`ports.protocols`) |
-|-------------------------|------------------------------|
-| `Tokenizer`             | `TokenizerProtocol`          |
-| *(no artifact)*         | `ArchitectureProtocol`       |
-| *(no artifact)*         | `InspectableProtocol`        |
+| Artifact (`core.types`)           | Protocol (`ports.protocols`) |
+|-----------------------------------|------------------------------|
+| `CharTokenizer`, `BpeTokenizer`   | `TokenizerProtocol`          |
+| *(no artifact)*                   | `ArchitectureProtocol`       |
+| *(no artifact)*                   | `InspectableProtocol`        |
 
 Import site is unambiguous:
-- `from demoodle.core.types import Tokenizer` → the data artifact (just `vocab_size`)
+- `from demoodle.tokenizers.char import CharTokenizer` → the concrete tokenizer artifact
 - `from demoodle.ports.protocols import TokenizerProtocol` → the behavioral contract
 
 ---
@@ -99,6 +99,20 @@ Three-way splits chain two calls: `a, tmp = rng.split(); b, c = tmp.split()`.
 
 ---
 
+## Stages do not validate their inputs at runtime
+
+Stage `run` functions trust the artifact dict they receive. They do not `isinstance`-check their inputs. The runner guarantees that a stage only executes when all its `needs` are satisfied, and the type system enforces correctness statically. Adding runtime isinstance checks would couple `tokenizers/` back to `core/types.py`, creating a circular import.
+
+Use a narrowing annotation instead of a check:
+
+```python
+def run(artifacts: dict[str, Artifact], _rng: RNG) -> dict[str, Artifact]:
+    corpus: Corpus = artifacts["corpus"]  # ty: ignore[invalid-assignment]
+    ...
+```
+
+---
+
 ## Tokenizer artifacts — concrete types go in the `Artifact` union (W8, W17)
 
 There is no shared `Tokenizer` base artifact. Instead, concrete tokenizer types are added to the `Artifact` union directly:
@@ -108,7 +122,7 @@ There is no shared `Tokenizer` base artifact. Instead, concrete tokenizer types 
 
 Both satisfy `TokenizerProtocol` structurally — no inheritance. Stages receive whichever concrete type is in the artifact dict and call `encode`/`decode`/`vocab_size` through the protocol. `_hash_artifact` in `shell/persistence.py` gets one branch per concrete type.
 
-The current `Tokenizer(vocab_size=int)` stub in `core/types.py` is a transitional placeholder; remove it in W8.
+The `Tokenizer` placeholder was removed in W8 when `CharTokenizer` was added.
 
 ---
 

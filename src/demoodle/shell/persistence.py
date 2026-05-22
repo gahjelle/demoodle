@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import torch
 
 from demoodle.core.types import Corpus, Dataset, Metrics, Policy
+from demoodle.tokenizers.char import CharTokenizer
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -53,6 +54,8 @@ WORKTREE_DIRTY: bool = is_worktree_dirty()
 def _hash_artifact(artifact: Artifact) -> str:
     h = hashlib.sha256()
     match artifact:
+        case CharTokenizer(char_to_id=char_to_id):
+            h.update(repr(sorted(char_to_id.items())).encode())
         case Corpus(text=text):
             h.update(text.encode())
         case Metrics(losses=losses):

@@ -96,7 +96,7 @@ Update future work items based on decisions made.
   line count ballpark.
 - **Depends on:** W2
 
-### W8. CharTokenizer + train_tokenizer stage
+### ✅ W8. CharTokenizer + train_tokenizer stage
 - **Goal:** the tokenizer seam, trivial implementation.
 - **Build:** `CharTokenizer` frozen dataclass (`{char:id}` mapping built from
   corpus; `encode`/`decode`/`vocab_size` satisfying `TokenizerProtocol`

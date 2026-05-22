@@ -11,6 +11,7 @@ from demoodle.core.rng import RNG
 from demoodle.core.types import Artifact, Corpus, Dataset, Metrics, Policy
 from demoodle.ports import Stage
 from demoodle.shell.persistence import _hash_artifact, cache_key, load, save
+from demoodle.tokenizers.char import CharTokenizer
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -74,6 +75,13 @@ def test_hash_policy_stable_and_sensitive() -> None:
     p2 = Policy(model=model_b)
     assert _hash_artifact(p1) == _hash_artifact(p1)
     assert _hash_artifact(p1) != _hash_artifact(p2)
+
+
+def test_hash_char_tokenizer_stable_and_sensitive() -> None:
+    t1 = CharTokenizer(char_to_id={"a": 0, "b": 1})
+    t2 = CharTokenizer(char_to_id={"a": 0, "c": 1})
+    assert _hash_artifact(t1) == _hash_artifact(t1)
+    assert _hash_artifact(t1) != _hash_artifact(t2)
 
 
 def test_hash_policy_differs_when_value_head_differs() -> None:
@@ -207,6 +215,15 @@ def test_save_load_policy_roundtrip(tmp_path: Path) -> None:
     loaded_policy: Policy = loaded["p"]  # ty: ignore[invalid-assignment]
     for k in model.state_dict():
         assert torch.equal(loaded_policy.model.state_dict()[k], model.state_dict()[k])
+
+
+def test_save_load_char_tokenizer_roundtrip(tmp_path: Path) -> None:
+    original = CharTokenizer(char_to_id={"a": 0, "b": 1, "\n": 2})
+    key = "tokenizerkey"
+    save(key, {"t": original}, tmp_path)
+    loaded = load(key, tmp_path)
+    assert loaded is not None
+    assert loaded["t"].char_to_id == original.char_to_id  # ty: ignore[unresolved-attribute]
 
 
 def test_load_missing_key_returns_none(tmp_path: Path) -> None:

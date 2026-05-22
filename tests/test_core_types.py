@@ -13,6 +13,7 @@ from demoodle.core.types import (
     Output,
     Policy,
 )
+from demoodle.tokenizers.char import CharTokenizer
 
 # ---------------------------------------------------------------------------
 # Output
@@ -110,4 +111,4 @@ def test_metrics_is_frozen() -> None:
 
 def test_artifact_union_includes_all_variants() -> None:
     variants = set(get_args(Artifact.__value__))
-    assert variants == {Corpus, Dataset, Policy, Metrics}
+    assert variants == {CharTokenizer, Corpus, Dataset, Policy, Metrics}

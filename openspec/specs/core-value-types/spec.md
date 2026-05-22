@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the foundational domain types used across the Demoodle system: `Seq`, `Output`, `Corpus`, `Tokenizer`, `Dataset`, `Policy`, `Metrics`, and the `Artifact` union. All types are exported from `demoodle.core.types` and are either type aliases or frozen dataclasses, ensuring immutability at the boundary of the functional core.
+Defines the foundational domain types used across the Demoodle system: `Seq`, `Output`, `Corpus`, `Dataset`, `Policy`, `Metrics`, and the `Artifact` union. All types are exported from `demoodle.core.types` and are either type aliases or frozen dataclasses, ensuring immutability at the boundary of the functional core.
 
 ## Requirements
 
@@ -34,9 +34,6 @@ The module SHALL export `Corpus` as a frozen dataclass with field `text: str` ho
 #### Scenario: Corpus is immutable
 - **WHEN** code attempts to assign to `text` on a `Corpus` instance
 - **THEN** a `FrozenInstanceError` is raised
-
-### Requirement: Tokenizer placeholder (transitional)
-The module currently exports a `Tokenizer` frozen dataclass with field `vocab_size: int` as a transitional placeholder. This type SHALL be removed in W8 and replaced by concrete tokenizer types (`CharTokenizer`, `BpeTokenizer`) that are added to the `Artifact` union directly. Concrete tokenizer types satisfy `TokenizerProtocol` structurally — no base class or inheritance is required.
 
 ### Requirement: Dataset frozen dataclass
 The module SHALL export `Dataset` as a frozen dataclass with field `tokens: torch.Tensor`, representing the full encoded corpus as a flat sequence of token IDs.
@@ -72,13 +69,15 @@ The module SHALL export `Metrics` as a frozen dataclass with field `losses: list
 - **THEN** a `FrozenInstanceError` is raised
 
 ### Requirement: Artifact union type
-The module SHALL export `Artifact` as an open union of all pipeline values. Currently `Corpus | Tokenizer | Dataset | Policy | Metrics` (with `Tokenizer` as a placeholder). The union grows as concrete types are confirmed:
-- **W8**: `Tokenizer` replaced by `CharTokenizer`
-- **W17**: `BpeTokenizer` added
+The module SHALL export `Artifact` as an open union of all pipeline values:
+`Corpus | CharTokenizer | Dataset | Policy | Metrics`. `CharTokenizer` is imported
+from `demoodle.tokenizers.char`. The union grows as concrete types are confirmed:
+- **W18**: `BpeTokenizer` added
 - **W21**: `RewardModel` and `PreferenceData` added
 
-No shared base class or inheritance is required — types join the union because stages produce and consume them.
+No shared base class or inheritance is required — types join the union because
+stages produce and consume them.
 
 #### Scenario: Each variant is a valid Artifact
-- **WHEN** any of `Corpus`, `Tokenizer`, `Dataset`, `Policy`, or `Metrics` is type-checked against `Artifact`
+- **WHEN** any of `Corpus`, `CharTokenizer`, `Dataset`, `Policy`, or `Metrics` is type-checked against `Artifact`
 - **THEN** the type checker accepts it without error

@@ -13,6 +13,7 @@ from demoodle.ports import (
     Stage,
     TokenizerProtocol,
 )
+from demoodle.tokenizers.char import CharTokenizer
 
 # ---------------------------------------------------------------------------
 # TokenizerProtocol
@@ -32,6 +33,13 @@ class _DummyTokenizer:
 def test_tokenizer_protocol_dummy_satisfies() -> None:
     tok: TokenizerProtocol = _DummyTokenizer()
     assert tok.vocab_size == 10
+
+
+def test_char_tokenizer_satisfies_tokenizer_protocol() -> None:
+    tok: TokenizerProtocol = CharTokenizer(char_to_id={"a": 0, "b": 1, "\n": 2})
+    assert tok.vocab_size == 3
+    assert tok.encode("ab") == [0, 1]
+    assert tok.decode([2, 0]) == "\na"
 
 
 def test_tokenizer_protocol_round_trip() -> None:
