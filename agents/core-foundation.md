@@ -77,9 +77,23 @@ Three-way splits chain two calls: `a, tmp = rng.split(); b, c = tmp.split()`.
 
 ---
 
-## `Tokenizer` artifact will be extended by W8
+## `Tokenizer` artifact vs. `CharTokenizer` (W8)
 
-The `Tokenizer` artifact in `core/types.py` currently holds only `vocab_size: int`. `CharTokenizer` (W8) will subclass it. When that happens, the `Artifact` union (`core/types.py`, bottom of file) is the single place to update if the union member changes. The `TokenizerProtocol` in `ports/protocols.py` is separate and not affected.
+The `Tokenizer` artifact in `core/types.py` holds only `vocab_size: int`. `CharTokenizer` (W8) will be a **separate class** satisfying `TokenizerProtocol` — it will NOT subclass `Tokenizer`. The `Tokenizer` artifact remains a minimal data carrier; the actual tokenizer logic lives in the protocol implementor. The `Artifact` union stays unchanged for W8.
+
+---
+
+## `Stage.config_hash` — required, no default (added W5)
+
+`Stage` has a required `config_hash: str` field with no default. Every stage construction must supply it explicitly. The value should be a hash of all pydantic sub-configs that affect the stage's output:
+
+```python
+import hashlib
+config_hash = hashlib.sha256(training_cfg.model_dump_json().encode()).hexdigest()
+Stage(name="pretrain", ..., config_hash=config_hash, run=run)
+```
+
+Stages whose output is independent of all config pass `config_hash=""` explicitly — this is intentional documentation, not an omission. The cache key (`shell/persistence.py`) combines this hash with the stage name, code version, input artifact hashes, and RNG seed.
 
 ---
 

@@ -64,7 +64,7 @@ Update future work items based on decisions made.
 
 ## Milestone 1 — The Runner (imperative shell)
 
-### W5. Artifact cache / persistence
+### ✅ W5. Artifact cache / persistence
 - **Goal:** don't retrain what hasn't changed.
 - **Build:** `shell/persistence.py` — content-addressed store keyed by hash of
   (stage name + code version + input artifact hashes + config + seed). Save/load

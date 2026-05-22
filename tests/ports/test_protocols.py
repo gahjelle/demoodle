@@ -111,7 +111,7 @@ def _noop_run(artifacts: dict[str, Artifact], _rng: RNG) -> dict[str, Artifact]:
 
 
 def test_stage_is_frozen() -> None:
-    stage = Stage(name="test", needs=[], produces=[], run=_noop_run)
+    stage = Stage(name="test", needs=[], produces=[], config_hash="", run=_noop_run)
     with pytest.raises(dataclasses.FrozenInstanceError):
         stage.name = "other"  # ty: ignore[invalid-assignment]
 
@@ -119,8 +119,19 @@ def test_stage_is_frozen() -> None:
 def test_stage_run_pure_under_same_rng() -> None:
     inputs: dict[str, Artifact] = {"corpus": Corpus(text="hello")}
     rng = RNG(seed=42)
-    stage = Stage(name="identity", needs=["corpus"], produces=["corpus"], run=_noop_run)
+    stage = Stage(
+        name="identity",
+        needs=["corpus"],
+        produces=["corpus"],
+        config_hash="",
+        run=_noop_run,
+    )
     assert stage.run(inputs, rng) == stage.run(inputs, rng)
+
+
+def test_stage_construction_requires_config_hash() -> None:
+    with pytest.raises(TypeError):
+        Stage(name="test", needs=[], produces=[], run=_noop_run)  # ty: ignore[missing-argument]
 
 
 # ---------------------------------------------------------------------------

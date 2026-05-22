@@ -57,4 +57,5 @@ class Stage:
     name: str
     needs: list[str]
     produces: list[str]
+    config_hash: str
     run: Callable[[dict[str, Artifact], RNG], dict[str, Artifact]]
