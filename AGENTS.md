@@ -37,6 +37,20 @@ uv run ty check .
 - Ruff for linting and formatting with all rules enabled only COM812, D203, D213 are disabled. Use inline overrides only when truly necessary
 - Type checker is `ty` (not `mypy`), use `# ty: ignore[<code>]` if suppression is ever needed, never `# type: ignore[<mypy-code>]`
 
+## Agent skills
+
+### Issue tracker
+
+Issues live as local markdown files under `.scratch/`. See `agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `agents/domain.md`.
+
 ## More Information
 
 You can find more information about the project inside agents/
