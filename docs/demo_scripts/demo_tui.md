@@ -29,22 +29,22 @@ The unit of the demo is the **diff**, never the raw run.
 ## 2. TUI layout
 
 ```
-┌ BASELINE ─────────────────────────────────────────────────────────────────┐
-│  Arch: [Transformer]   Tok: [BPE]   Corpus: [code]   Train: [DPO]           │
-│         ▲ active axis (bright)   others locked (dim)        seed: 1337       │
-├──────────────┬──────────────────────────────────────┬──────────────────────┤
-│ STAGE GRAPH  │  STAGE (generation)                   │  INSPECT (context)   │
-│              │                                       │                      │
-│ corpus ✓     │  prompt> def fib(n):                  │  loss curve  ▁▂▃▅▆▇  │
-│  └tok  ✓     │  ┌ token-by-token ───────────────┐    │                      │
-│   └data ✓    │  │ return ████████ 0.62          │    │  attention heatmap   │
-│    └pre  ✓   │  │ fib    ███      0.18          │    │  ░░▒▒▓▓██ (grid)     │
-│     └sft ✓   │  │ n      ██       0.11          │    │                      │
-│      └dpo ◐  │  └───────────────────────────────┘    │  eval: valid 71% ▲   │
-│  (◐ = live)  │  temperature ●━━━━━━○  0.8            │  reward ▁▃▅  KL ▂▂▃  │
-├──────────────┴──────────────────────────────────────┴──────────────────────┤
-│ WHAT CHANGED:  + context window (MLP→Transformer)   loss 2.41→1.78  ✓cached │
-└──────────────────────────────────────────────────────────────────────────┘
+┌ BASELINE ──────────────────────────────────────────────────────────────────┐
+│  Arch: [Transformer]   Tok: [BPE]   Corpus: [code]   Train: [DPO]          │
+│         ▲ active axis (bright)   others locked (dim)        seed: 1337     │
+├──────────────┬───────────────────────────────────────┬─────────────────────┤
+│ STAGE GRAPH  │  STAGE (generation)                   │  INSPECT (context)  │
+│              │                                       │                     │
+│ corpus ✓     │  prompt> def fib(n):                  │  loss curve  ▁▂▃▅▆▇ │
+│  └tok  ✓     │  ┌ token-by-token ───────────────┐    │                     │
+│   └data ✓    │  │ return ████████ 0.62          │    │  attention heatmap  │
+│    └pre  ✓   │  │ fib    ███      0.18          │    │  ░░▒▒▓▓██ (grid)    │
+│     └sft ✓   │  │ n      ██       0.11          │    │                     │
+│      └dpo ◐  │  └───────────────────────────────┘    │  eval: valid 71% ▲  │
+│  (◐ = live)  │  temperature ●━━━━━━○  0.8            │  reward ▁▃▅  KL ▂▂▃ │
+├──────────────┴───────────────────────────────────────┴─────────────────────┤
+│ WHAT CHANGED:  + context window (MLP→Transformer)   loss 2.41→1.78  ✓cached│
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Baseline bar (top):** the four-dimensional config. Active axis is bright; locked
@@ -182,18 +182,18 @@ longest act and holds the biggest wow.
 
 ## 5. Wow-moment index (for cutting to time)
 
-| # | Act | Moment | Live or cached |
-|---|-----|--------|----------------|
-| 1 | Prologue | Temperature squeezes the distribution | live (instant) |
-| 2 | I | Bigram → Transformer sample transformation | cached |
-| 3 | I | Attention heatmap lights up | cached |
-| 4 | II | "Count the letters" failure, char vs BPE | cached |
-| 5 | II | Merge timeline animates on code | cached |
-| 6 | II | Code generation + validity gauge | cached |
-| 7 | III | Human clicks → retrain → behavior shift | **must be live** |
-| 8 | III | PPO reward rising while KL tracked | cached or live |
-| 9 | Finale | Stack montage (gibberish → competent) | cached |
-| 10 | Finale | New architecture plugged in live | **must be live** |
+| #   | Act      | Moment                                     | Live or cached   |
+| --- | -------- | ------------------------------------------ | ---------------- |
+| 1   | Prologue | Temperature squeezes the distribution      | live (instant)   |
+| 2   | I        | Bigram → Transformer sample transformation | cached           |
+| 3   | I        | Attention heatmap lights up                | cached           |
+| 4   | II       | "Count the letters" failure, char vs BPE   | cached           |
+| 5   | II       | Merge timeline animates on code            | cached           |
+| 6   | II       | Code generation + validity gauge           | cached           |
+| 7   | III      | Human clicks → retrain → behavior shift    | **must be live** |
+| 8   | III      | PPO reward rising while KL tracked         | cached or live   |
+| 9   | Finale   | Stack montage (gibberish → competent)      | cached           |
+| 10  | Finale   | New architecture plugged in live           | **must be live** |
 
 If short on time, the irreducible spine is **3 → 4 → 7 → 10** (one per act).
 

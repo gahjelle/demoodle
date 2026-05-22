@@ -12,28 +12,18 @@ This makes transformers dramatically more capable than MLPs at the same context 
 
 ### The residual stream
 
-The transformer processes a sequence of token embeddings through a series of layers. Each layer adds its output to its input rather than replacing it — this is the *residual connection*. See the diagram below for the full block structure.
+The transformer processes a sequence of token embeddings through a series of layers. Each layer adds its output to its input rather than replacing it — this is the *residual connection*.
 
-![Transformer block diagram](transformer-block.svg)
-
-```
-input embeddings
-      │
-      ▼
-  ┌───────────────┐
-  │  Attention    │──── adds to stream
-  └───────────────┘
-      │
-      ▼
-  ┌───────────────┐
-  │  MLP block    │──── adds to stream
-  └───────────────┘
-      │
-      ▼
-  (repeat for each layer)
-      │
-      ▼
-  final linear → logits
+```mermaid
+flowchart TD
+    A[input embeddings] --> attn[Attention]
+    A --> sum1((+))
+    attn -->|adds to stream| sum1
+    sum1 --> mlp[MLP block]
+    sum1 --> sum2((+))
+    mlp -->|adds to stream| sum2
+    sum2 --> rep[repeat for each layer]
+    rep --> out[final linear → logits]
 ```
 
 The residual connection means early layers do not have to solve everything — later layers can refine the representation incrementally.
@@ -78,13 +68,16 @@ The zeros in the upper triangle enforce *causal masking*: position `i` cannot lo
 
 Rather than a single attention computation, the transformer runs `n_heads` attention operations in parallel, each with its own Q/K/V projection matrices. Their outputs are concatenated:
 
-```
-head_1: attends to short-range patterns
-head_2: attends to long-range dependencies
-head_3: attends to specific token types
-...
-
-concat(head_1, ..., head_n) → linear → output
+```mermaid
+flowchart TD
+    A[input] --> h1["head 1\nshort-range patterns"]
+    A --> h2["head 2\nlong-range dependencies"]
+    A --> h3["head n\n..."]
+    h1 --> cat[concat]
+    h2 --> cat
+    h3 --> cat
+    cat --> lin[linear]
+    lin --> out[output]
 ```
 
 In practice the heads specialise automatically during training — you don't choose what each head looks for.
@@ -113,13 +106,13 @@ The positional embeddings are learned parameters (one vector per position, up to
 
 ## Key hyperparameters
 
-| Parameter        | What it controls                                                    |
-|------------------|---------------------------------------------------------------------|
-| `embedding_dim`  | Size of the residual stream — all projections work in this space    |
-| `context_length` | Maximum sequence length the model can attend over                   |
-| `n_layers`       | Depth — how many attention+MLP blocks are stacked                   |
-| `n_heads`        | Number of parallel attention heads — more heads = finer patterns    |
-| `dropout`        | Regularisation — fraction of activations zeroed during training     |
+| Parameter        | What it controls                                                 |
+| ---------------- | ---------------------------------------------------------------- |
+| `embedding_dim`  | Size of the residual stream — all projections work in this space |
+| `context_length` | Maximum sequence length the model can attend over                |
+| `n_layers`       | Depth — how many attention+MLP blocks are stacked                |
+| `n_heads`        | Number of parallel attention heads — more heads = finer patterns |
+| `dropout`        | Regularisation — fraction of activations zeroed during training  |
 
 Typical small values for a CPU-friendly demo: `embedding_dim=64`, `context_length=32`, `n_layers=2`, `n_heads=2`.
 

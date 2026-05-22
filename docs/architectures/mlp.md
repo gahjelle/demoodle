@@ -42,22 +42,11 @@ concatenate → x          shape: [k * embedding_dim]
 
 ### Forward pass
 
-```
-x (shape: [k * embedding_dim])
-       │
-       ▼
-  ┌──────────────────────────────┐
-  │  Linear(k*emb_dim, hidden)   │
-  │  + Tanh activation           │
-  └──────────────────────────────┘
-       │
-       ▼  shape: [hidden_size]
-  ┌──────────────────────────────┐
-  │  Linear(hidden, vocab_size)  │
-  └──────────────────────────────┘
-       │
-       ▼  logits, shape: [vocab_size]
-  softmax → probabilities → sample
+```mermaid
+flowchart TD
+    A["x — shape: [k × embedding_dim]"] --> B["Linear(k×emb_dim, hidden) + Tanh\nshape: [hidden_size]"]
+    B --> C["Linear(hidden, vocab_size)\nshape: [vocab_size]"]
+    C --> D["softmax → probabilities → sample"]
 ```
 
 The hidden layer is what lets the model learn non-linear combinations of the context — things like "a vowel in the second-to-last position *and* a consonant in the last position suggests a vowel is coming."
@@ -78,8 +67,8 @@ for each position i in the corpus:
 
 ## Key hyperparameters
 
-| Parameter        | What it controls                                              |
-|------------------|---------------------------------------------------------------|
+| Parameter        | What it controls                                             |
+| ---------------- | ------------------------------------------------------------ |
 | `embedding_dim`  | Size of each token's vector — larger = more expressive       |
 | `context_length` | How many preceding tokens the model sees — the "memory"      |
 | `hidden_size`    | Width of the hidden layer — capacity for non-linear patterns |

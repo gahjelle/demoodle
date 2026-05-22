@@ -50,13 +50,38 @@ Detailed sections can go as deep as needed, but prefer concrete examples and dia
 
 ## Diagrams
 
-**Use ASCII diagrams liberally.** Any data flow, architecture structure, matrix shape, or sequence of steps that can be drawn in ASCII should be. Put diagrams inline, close to the prose that explains them.
+Prefer diagrams in this order: **Mermaid → ASCII → SVG**.
+
+### 1. Mermaid (preferred)
+
+Use Mermaid for any data flow, forward-pass pipeline, stage graph, or architecture diagram that has boxes and arrows. Mermaid renders natively in GitHub and most Markdown viewers, requires no separate files, and is easy to edit.
+
+````markdown
+```mermaid
+flowchart TD
+    A[input] --> B[layer]
+    B --> C[output]
+```
+````
+
+Use `flowchart TD` (top-down) for forward passes and pipelines. Use `flowchart LR` (left-right) for sequential flows.
+
+**Do not use Mermaid for:** matrix/grid visualisations, attention weight tables, pseudocode with complex inline shapes, or anything where the diagram *is* the data (e.g. a table of embedding vectors). Use ASCII for those.
+
+### 2. ASCII (second choice)
+
+Use ASCII for matrix layouts, grids, inline pseudocode-style diagrams, and anything Mermaid would render awkwardly. Put diagrams inline, close to the prose that explains them.
 
 ```
-input → [layer] → output
+         key positions →
+         0    1    2
+q  0  [ 1.0  0.0  0.0 ]
+u  1  [ 0.3  0.7  0.0 ]
 ```
 
-**Use SVG for diagrams too complex for ASCII.** When a diagram has many components, precise layout matters, or ASCII becomes unreadable, create an SVG file and embed it with a standard image tag:
+### 3. SVG (last resort)
+
+Use SVG only when Mermaid and ASCII both fail — typically when precise spatial layout or colour coding is essential and the diagram has many components.
 
 ```markdown
 ![Alt text describing the diagram](filename.svg)
@@ -72,10 +97,10 @@ Guidelines for SVG diagrams:
 
 ## File Placement
 
-| Content type               | Location                        |
-|----------------------------|---------------------------------|
-| Architecture explainers    | `docs/architectures/<name>.md`  |
-| SVG assets for a doc       | Same directory as the markdown  |
-| Demo scripts / instructor notes | `docs/`                    |
+| Content type                    | Location                       |
+| ------------------------------- | ------------------------------ |
+| Architecture explainers         | `docs/architectures/<name>.md` |
+| SVG assets for a doc            | Same directory as the markdown |
+| Demo scripts / instructor notes | `docs/`                        |
 
 Do not put implementation notes, task lists, or agent instructions inside `docs/`. Those belong in `agents/` or `openspec/`.

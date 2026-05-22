@@ -11,7 +11,7 @@ An immutable, named value that flows between **Stages** and is stored in the **A
 
 The complete set of artifact types is the `Artifact` union in `core/types.py`. It grows when new work items confirm new concrete types; types join the union because stages produce and consume them, not through inheritance.
 
-**Current types:** `Corpus`, `CharTokenizer` (W8), `BpeTokenizer` (W17), `Dataset`, `Policy`, `Metrics`, `RewardModel` (W21), `PreferenceData` (W21).
+**Current types:** `Corpus`, `CharTokenizer` (W8), `BpeTokenizer` (W18), `Dataset`, `Policy`, `TrainingMetrics`, `EvalMetrics` (W21), `RewardModel` (W23), `PreferenceData` (W23).
 
 **Avoid:** "data", "output", "result" when referring to inter-stage values — use "artifact".
 
@@ -52,19 +52,19 @@ A structural interface (`ports/protocols.py`) defining a behavioral contract. Cl
 **Named protocols:**
 - `TokenizerProtocol` — `encode(text) -> list[int]`, `decode(ids) -> str`, `vocab_size: int`
 - `ArchitectureProtocol` — `init_state(rng: RNG) -> Policy` (config bound at construction), `forward(policy, tokens) -> Output`
-- `InspectableProtocol` — `call(seq, temperature) -> Output`, `explain(seq) -> dict` (optional, defaults to `{}`)
+- `InspectableProtocol` — `call(seq, temperature, top_k=None, top_p=None) -> Output`, `explain(seq) -> dict` (optional, defaults to `{}`)
 
 ---
 
 ## Policy
 
-The artifact holding a trained model: a frozen dataclass with `model: nn.Module` and `value_head: nn.Module | None`. Write-once by convention — training always produces a new `Policy`, never mutates an existing one. The `value_head` slot is reserved for PPO (W25) and is `None` for all other training regimes.
+The artifact holding a trained model: a frozen dataclass with `model: nn.Module` and `value_head: nn.Module | None`. Write-once by convention — training always produces a new `Policy`, never mutates an existing one. The `value_head` slot is reserved for PPO (W27) and is `None` for all other training regimes.
 
 ---
 
 ## InspectableProtocol
 
-The inference and inspection interface. `call(seq, temperature) -> Output` returns the full probability distribution (logits) plus the sampled next token, allowing front ends to visualise the distribution without a second forward pass. `explain(seq) -> dict` is a pure function returning arch-specific internals (e.g. attention weights for transformers); it re-runs inference internally and carries no mutable state. Architectures without meaningful internals inherit the default `explain` returning `{}` by subclassing `InspectableProtocol`.
+The inference and inspection interface. `call(seq, temperature, top_k=None, top_p=None) -> Output` returns the full probability distribution (logits) plus the sampled next token, allowing front ends to visualise the distribution without a second forward pass. `explain(seq) -> dict` is a pure function returning arch-specific internals (e.g. attention weights for transformers); it re-runs inference internally and carries no mutable state. Architectures without meaningful internals inherit the default `explain` returning `{}` by subclassing `InspectableProtocol`.
 
 ---
 
@@ -74,9 +74,19 @@ Frozen dataclass: `logits: torch.Tensor` (the full next-token distribution) and 
 
 ---
 
+## Axis
+
+One of the four independently configurable dimensions of a model configuration: **architecture**, **tokenizer**, **corpus**, and **training regime** (pretrain through post-training). The demo's core mechanic is holding three axes fixed while moving one — so the audience sees the contribution of each dimension in isolation.
+
+**Avoid:** "knob", "dimension", "parameter" when referring to these four — use "axis" (plural: **axes**).
+
+---
+
 ## Corpus
 
-Artifact: raw, unsegmented text loaded from disk. The starting point of the pipeline.
+Artifact: raw, unsegmented text loaded from disk. The starting point of the pipeline. Also one of the four configurable **Axes** — independently selectable alongside architecture, tokenizer, and training regime. Corpus and tokenizer are correlated in practice (some tokenizers suit some corpora better) but are technically independent axes.
+
+**Current corpora:** names (W7), TinyShakespeare (W14), code/Python (W15).
 
 ---
 
@@ -86,9 +96,17 @@ Artifact: the corpus encoded as a flat 1D tensor of token IDs. Produced by `buil
 
 ---
 
-## Metrics
+## TrainingMetrics
 
-Artifact: `losses: list[float]` — the per-step training loss curve from a training stage.
+Artifact: `losses: list[float]` — the per-step training loss curve from a training stage. Produced by training stages (pretrain, SFT, DPO, PPO) alongside the `Policy`.
+
+**Avoid:** the bare name "Metrics" — use `TrainingMetrics` to distinguish from `EvalMetrics`.
+
+---
+
+## EvalMetrics
+
+Artifact: the generation-quality signal produced by the eval stage (W21). Captures corpus-appropriate validity — e.g. `ast.parse` pass-rate for code, plausible-name rate for names, structure stats for Shakespeare. Produced by a separate eval stage that takes a `Policy` as input; has no dependency on `TrainingMetrics`. The validity scalar is deterministic under a fixed seed, so it is fully cacheable and comparable across training regimes.
 
 ---
 

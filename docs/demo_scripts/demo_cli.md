@@ -159,18 +159,18 @@ demoodle graph                                # show DAG + all-cache-hits
 
 ## 5. Wow-moment index (CLI)
 
-| # | Act | Moment | CLI vs TUI |
-|---|-----|--------|------------|
-| 1 | Prologue | `--temp` stacked outputs down the scrollback | CLI ~ (durable, less live) |
-| 2 | I | `compare arch` from→to block + loss delta | CLI = (cleaner diff) |
-| 3 | I | `attn` text heatmap | TUI wins (CLI shows real matrix) |
-| 4 | II | `tokens` char vs bpe segmentation + counts | **CLI wins** |
-| 5 | II | `merges --top 20` ranked learned merges | **CLI wins** |
-| 6 | II | `eval` validity gauge | CLI = |
-| 7 | III | `label` → `train dpo --live` → behavior shift | TUI/web wins |
-| 8 | III | `eval --across` progression table 34→51→68% | **CLI wins** |
-| 9 | Finale | `compare full` whole-arc block | CLI = (screenshot-friendly) |
-| 10 | Finale | `plug` + `gen` new arch in two commands | **CLI wins** |
+| #   | Act      | Moment                                        | CLI vs TUI                       |
+| --- | -------- | --------------------------------------------- | -------------------------------- |
+| 1   | Prologue | `--temp` stacked outputs down the scrollback  | CLI ~ (durable, less live)       |
+| 2   | I        | `compare arch` from→to block + loss delta     | CLI = (cleaner diff)             |
+| 3   | I        | `attn` text heatmap                           | TUI wins (CLI shows real matrix) |
+| 4   | II       | `tokens` char vs bpe segmentation + counts    | **CLI wins**                     |
+| 5   | II       | `merges --top 20` ranked learned merges       | **CLI wins**                     |
+| 6   | II       | `eval` validity gauge                         | CLI =                            |
+| 7   | III      | `label` → `train dpo --live` → behavior shift | TUI/web wins                     |
+| 8   | III      | `eval --across` progression table 34→51→68%   | **CLI wins**                     |
+| 9   | Finale   | `compare full` whole-arc block                | CLI = (screenshot-friendly)      |
+| 10  | Finale   | `plug` + `gen` new arch in two commands       | **CLI wins**                     |
 
 Irreducible CLI spine if short on time: **4 → 5 → 8 → 10** (note this differs from the
 TUI's 3→4→7→10 — the CLI leans on tokenization and the eval progression, the TUI on

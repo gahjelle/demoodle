@@ -14,19 +14,11 @@ It cannot learn context ("the word *bank* means something different after *river
 
 Given a token `t` at position `i`, predict the next token `t+1` by looking at a weight matrix `W` of shape `[vocab_size, vocab_size]`:
 
-```
-input token (index)
-       │
-       ▼
-  ┌─────────────────────────────────┐
-  │  W[t, :]  ← one row of weights  │   shape: [vocab_size]
-  └─────────────────────────────────┘
-       │
-       ▼
-  logits → softmax → probabilities
-       │
-       ▼
-  sample next token
+```mermaid
+flowchart TD
+    A["input token (index)"] --> B["W[t, :] — one row of weights\nshape: [vocab_size]"]
+    B --> C["logits → softmax → probabilities"]
+    C --> D[sample next token]
 ```
 
 Each row `W[t, :]` holds the unnormalised log-probabilities (logits) for what comes after token `t`. There are no hidden layers, no embeddings beyond the index itself.
@@ -45,12 +37,12 @@ After training on a names corpus, `W["a", :]` will have high weight on vowels an
 
 ### Generation
 
-```
-start_token → W[start, :] → softmax → sample → next_token
-                                                    │
-                             ┌──────────────────────┘
-                             ▼
-                    W[next, :] → softmax → sample → ...
+```mermaid
+flowchart LR
+    A[start_token] --> B["W[start, :] → softmax → sample"]
+    B --> C[next_token]
+    C --> D["W[next, :] → softmax → sample"]
+    D --> E[...]
 ```
 
 Each step depends only on the previous token. Generated names look plausible letter-by-letter but lack longer-range structure (e.g. double letters, common English endings) because the model never sees further back.
@@ -59,10 +51,10 @@ Each step depends only on the previous token. Generated names look plausible let
 
 ## Key hyperparameters
 
-| Parameter    | What it controls                                      |
-|--------------|-------------------------------------------------------|
-| `vocab_size` | Size of `W` — set automatically from the tokenizer   |
-| `temperature`| Sharpness of sampling distribution at generation time|
+| Parameter     | What it controls                                      |
+| ------------- | ----------------------------------------------------- |
+| `vocab_size`  | Size of `W` — set automatically from the tokenizer    |
+| `temperature` | Sharpness of sampling distribution at generation time |
 
 Temperature is not a trained parameter. At generation: `probs = softmax(logits / temperature)`. Low temperature → greedy / peaked; high temperature → more random.
 

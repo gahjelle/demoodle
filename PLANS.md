@@ -25,7 +25,7 @@ Update future work items based on decisions made.
 - **Goal:** the immutable data spine.
 - **Build:** in `core/types.py`: `Seq` alias, `Output` (logits + optional sampled
   ids), and the `Artifact` tagged union with variants `Corpus`, `Tokenizer`,
-  `Dataset`, `Policy`, `Metrics` (leave `RewardModel`, `PreferenceData` as
+  `Dataset`, `Policy`, `TrainingMetrics` (leave `RewardModel`, `PreferenceData` as
   stubs/comments for later). **`Policy` must include an optional, nullable
   `value_head` field (`None` by default)** — reserved for PPO so we never retrofit
   architectures later.
@@ -135,7 +135,7 @@ Update future work items based on decisions made.
 ### W11. pretrain stage
 - **Goal:** train the bigram for real and record it.
 - **Build:** stage `(dataset, <arch/config>) -> (base_policy, metrics)`; a real
-  gradient-descent loop; capture a real loss curve into `Metrics`.
+  gradient-descent loop; capture a real loss curve into `TrainingMetrics`.
 - **Done when:** loss **decreases** over steps on names; produces a `Policy`;
   re-run hits cache.
 - **Depends on:** W9, W10
@@ -260,7 +260,7 @@ Update future work items based on decisions made.
 - **Goal:** a concrete, non-loss quality signal so post-training improvement is
   measurable (loss-down alone is a weak demo).
 - **Build:** a small eval helper/stage that samples N generations from a policy and
-  scores **corpus-appropriate validity**, recorded into `Metrics`:
+  scores **corpus-appropriate validity**, recorded into `EvalMetrics`:
   for **code**, the fraction that `compile()` / `ast.parse()` without error;
   for **names**, the fraction matching a plausible-name heuristic;
   for **Shakespeare**, line-length / structure stats. Pluggable per corpus.

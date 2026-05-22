@@ -7,7 +7,9 @@ rules:
   proposal:
     - "Keep proposals under 800 words"
     - "Always include a 'Non-goals' section"
+    - "Use terms as defined in CONTEXT.md"
   design:
+    - "Use terms as defined in CONTEXT.md"
     - "Always list open questions. If there are none, explicitly say so"
   specs:
     - "Keep the scope of specs consistent. Not every change needs to add new specs."
@@ -19,3 +21,4 @@ rules:
     - "Always review documentation and update if necessary: Read README.md,
       PLANS.md, MODELS.md and files inside agents/ and update whatever is necessary."
     - "When implementing a work item from PLANS.md, use a checkmark emoji to mark it done"
+    - "Review CONTEXT.md and update or add new terms if necessary."
