@@ -88,7 +88,7 @@ Update future work items based on decisions made.
 
 ## Milestone 2 — First Real Model (day-one slice complete)
 
-### W7. Names corpus + Corpus artifact
+### ✅ W7. Names corpus + Corpus artifact
 - **Goal:** committed real data.
 - **Build:** add `data/names.txt` (public-domain names, one per line); a loader
   producing a `Corpus` artifact.

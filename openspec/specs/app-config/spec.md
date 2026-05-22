@@ -52,3 +52,14 @@ The system SHALL select the correct architecture sub-config by reading `config.a
 #### Scenario: Active key resolves to sub-config
 - **WHEN** `config.architecture.active` is `"mlp"`
 - **THEN** `getattr(config.architecture, config.architecture.active)` returns the `MLPConfig` instance
+
+### Requirement: Config exposes a corpus section with active selection and per-corpus metadata
+The system SHALL provide a `CorpusConfig` section at `config.corpus` with an `active` key and per-corpus entries (`names`, `shakespeare`, `code`), each carrying `url`, `description`, and `license` metadata fields.
+
+#### Scenario: Corpus config is accessible and typed
+- **WHEN** code accesses `config.corpus`
+- **THEN** the result is a `CorpusConfig` instance with fields `active`, `names`, `shakespeare`, and `code`
+
+#### Scenario: Per-corpus metadata is accessible
+- **WHEN** code accesses `config.corpus.names`
+- **THEN** the result is a `CorpusEntryConfig` instance with non-empty `url`, `description`, and `license` fields

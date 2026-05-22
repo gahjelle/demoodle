@@ -9,6 +9,8 @@ from demoodle.config import config
 from demoodle.config.schemas import (
     ArchitecturesConfig,
     BigramConfig,
+    CorpusConfig,
+    CorpusEntryConfig,
     DemoodleConfig,
     MLPConfig,
     PathsConfig,
@@ -29,7 +31,16 @@ def test_config_default_sections() -> None:
     assert isinstance(config.architecture, ArchitecturesConfig)
     assert isinstance(config.tokenizer, TokenizersConfig)
     assert isinstance(config.training, TrainingConfig)
+    assert isinstance(config.corpus, CorpusConfig)
     assert isinstance(config.paths, PathsConfig)
+
+
+def test_config_corpus_names_metadata() -> None:
+    names = config.corpus.names
+    assert isinstance(names, CorpusEntryConfig)
+    assert names.url
+    assert names.description
+    assert names.license
 
 
 def test_config_architecture_env_override(monkeypatch: pytest.MonkeyPatch) -> None:

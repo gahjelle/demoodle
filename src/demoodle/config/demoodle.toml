@@ -32,6 +32,23 @@ learning_rate = 1e-3
 batch_size = 32
 n_steps = 5_000
 
+[corpus]
+active = "names"
+
+[corpus.names]
+url = "https://raw.githubusercontent.com/karpathy/makemore/master/names.txt"
+description = "32,000 US baby names from the Social Security Administration (1880–2018)"
+license = "Public domain (US government data)"
+
+[corpus.shakespeare]
+url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+description = "~1 MB excerpt of Shakespeare's works (Tiny Shakespeare)"
+license = "Public domain"
+
+[corpus.code]
+url = ""
+description = "Synthetic Python code corpus (W15)"
+license = ""
+
 [paths]
 cache_dir = "{cache_path}"
-data_dir = "{project_path}/data"

@@ -75,11 +75,27 @@ class TrainingConfig(StrictModel):
     n_steps: int
 
 
+class CorpusEntryConfig(StrictModel):
+    """Metadata for a single corpus."""
+
+    url: str
+    description: str
+    license: str
+
+
+class CorpusConfig(StrictModel):
+    """All corpus entries plus the active selection key."""
+
+    active: str
+    names: CorpusEntryConfig
+    shakespeare: CorpusEntryConfig
+    code: CorpusEntryConfig
+
+
 class PathsConfig(StrictModel):
     """Filesystem paths used by the shell layer."""
 
     cache_dir: str
-    data_dir: str
 
 
 #
@@ -91,4 +107,5 @@ class DemoodleConfig(StrictModel):
     architecture: ArchitecturesConfig
     tokenizer: TokenizersConfig
     training: TrainingConfig
+    corpus: CorpusConfig
     paths: PathsConfig
