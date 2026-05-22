@@ -54,7 +54,7 @@ def test_tokenizer_protocol_round_trip() -> None:
 
 
 class _DummyArchitecture:
-    def init_state(self) -> Policy:
+    def init_state(self, rng: RNG) -> Policy:  # noqa: ARG002
         return Policy(model=nn.Linear(4, 4))
 
     def forward(self, policy: Policy, tokens: Seq) -> Output:  # noqa: ARG002
@@ -63,7 +63,7 @@ class _DummyArchitecture:
 
 def test_architecture_protocol_dummy_satisfies() -> None:
     arch: ArchitectureProtocol = _DummyArchitecture()
-    policy = arch.init_state()
+    policy = arch.init_state(RNG(seed=0))
     assert isinstance(policy, Policy)
 
 
@@ -73,31 +73,36 @@ def test_architecture_protocol_dummy_satisfies() -> None:
 
 
 class _MinimalInspectable(InspectableProtocol):
-    def call(self, seq: Seq, temperature: float) -> int:  # noqa: ARG002
-        return 0
+    def call(self, seq: Seq, temperature: float) -> Output:  # noqa: ARG002
+        return Output(
+            logits=torch.zeros(4), sampled_ids=torch.zeros(1, dtype=torch.long)
+        )
 
 
 class _FullInspectable:
-    def call(self, seq: Seq, temperature: float) -> int:  # noqa: ARG002
-        return 1
+    def call(self, seq: Seq, temperature: float) -> Output:  # noqa: ARG002
+        return Output(
+            logits=torch.zeros(4), sampled_ids=torch.zeros(1, dtype=torch.long)
+        )
 
-    def explain(self) -> dict[str, Any]:
+    def explain(self, seq: Seq) -> dict[str, Any]:  # noqa: ARG002
         return {"attention": [[0.5, 0.5]]}
 
 
 def test_inspectable_protocol_minimal_satisfies() -> None:
     obj: InspectableProtocol = _MinimalInspectable()
-    assert obj.call(torch.zeros(1, dtype=torch.long), 1.0) == 0
+    result = obj.call(torch.zeros(1, dtype=torch.long), 1.0)
+    assert result.sampled_ids is not None
 
 
 def test_inspectable_protocol_explain_default_returns_empty_dict() -> None:
     obj: InspectableProtocol = _MinimalInspectable()
-    assert obj.explain() == {}
+    assert obj.explain(torch.zeros(1, dtype=torch.long)) == {}
 
 
 def test_inspectable_protocol_explain_override_returns_custom_data() -> None:
     obj: InspectableProtocol = _FullInspectable()
-    result = obj.explain()
+    result = obj.explain(torch.zeros(1, dtype=torch.long))
     assert "attention" in result
 
 

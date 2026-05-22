@@ -12,7 +12,6 @@ from demoodle.core.types import (
     Metrics,
     Output,
     Policy,
-    Tokenizer,
 )
 
 # ---------------------------------------------------------------------------
@@ -45,22 +44,6 @@ def test_corpus_is_frozen() -> None:
     c = Corpus(text="hello")
     with pytest.raises(dataclasses.FrozenInstanceError):
         c.text = "world"  # ty: ignore[invalid-assignment]
-
-
-# ---------------------------------------------------------------------------
-# Tokenizer
-# ---------------------------------------------------------------------------
-
-
-def test_tokenizer_holds_vocab_size() -> None:
-    t = Tokenizer(vocab_size=27)
-    assert t.vocab_size == 27
-
-
-def test_tokenizer_is_frozen() -> None:
-    t = Tokenizer(vocab_size=27)
-    with pytest.raises(dataclasses.FrozenInstanceError):
-        t.vocab_size = 100  # ty: ignore[invalid-assignment]
 
 
 # ---------------------------------------------------------------------------
@@ -127,4 +110,4 @@ def test_metrics_is_frozen() -> None:
 
 def test_artifact_union_includes_all_variants() -> None:
     variants = set(get_args(Artifact.__value__))
-    assert variants == {Corpus, Tokenizer, Dataset, Policy, Metrics}
+    assert variants == {Corpus, Dataset, Policy, Metrics}

@@ -27,8 +27,8 @@ class TokenizerProtocol(Protocol):
 class ArchitectureProtocol(Protocol):
     """Initialize model state and run forward passes."""
 
-    def init_state(self) -> Policy:
-        """Return a freshly initialized Policy. Signature extended by W10."""
+    def init_state(self, rng: RNG) -> Policy:
+        """Return a freshly initialized Policy. Config is bound at construction."""
         ...
 
     def forward(self, policy: Policy, tokens: Seq) -> Output:
@@ -39,12 +39,12 @@ class ArchitectureProtocol(Protocol):
 class InspectableProtocol(Protocol):
     """Sample next tokens and optionally expose internals."""
 
-    def call(self, seq: Seq, temperature: float) -> int:
-        """Sample the next token id given a context sequence."""
+    def call(self, seq: Seq, temperature: float) -> Output:
+        """Return logits and sampled next token id for the given context."""
         ...
 
-    def explain(self) -> dict[str, Any]:
-        """Return interpretability data; default is empty (no inspection)."""
+    def explain(self, seq: Seq) -> dict[str, Any]:  # noqa: ARG002
+        """Return interpretability data for the given context; default is empty."""
         return {}
 
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from demoodle.core.types import Corpus, Dataset, Metrics, Policy, Tokenizer
+from demoodle.core.types import Corpus, Dataset, Metrics, Policy
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -32,7 +32,22 @@ def _git_id() -> str:
         return ""
 
 
+def is_worktree_dirty() -> bool:
+    """Return True if the git working tree has uncommitted changes."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],  # noqa: S607
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return bool(result.stdout.strip())
+    except FileNotFoundError, subprocess.CalledProcessError:
+        return False
+
+
 _GIT_ID: str = _git_id()
+WORKTREE_DIRTY: bool = is_worktree_dirty()
 
 
 def _hash_artifact(artifact: Artifact) -> str:
@@ -42,8 +57,6 @@ def _hash_artifact(artifact: Artifact) -> str:
             h.update(text.encode())
         case Metrics(losses=losses):
             h.update(repr(losses).encode())
-        case Tokenizer(vocab_size=vocab_size):
-            h.update(str(vocab_size).encode())
         case Dataset(tokens=tokens):
             h.update(
                 bytes(tokens.cpu().contiguous().view(torch.uint8).flatten().tolist())
@@ -94,4 +107,5 @@ def load(key: str, cache_dir: Path) -> dict[str, Artifact] | None:
     path = cache_dir / f"{key}.pt"
     if not path.exists():
         return None
+    # weights_only=False: artifact dicts contain dataclasses, not just tensors.
     return torch.load(path, weights_only=False)  # type: ignore[return-value]

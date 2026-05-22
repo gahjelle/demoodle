@@ -1,5 +1,6 @@
 """Topological stage executor with content-addressed caching."""
 
+import warnings
 from typing import TYPE_CHECKING
 
 from demoodle.shell import persistence
@@ -58,6 +59,13 @@ def run(
     cache_dir: Path,
 ) -> dict[str, Artifact]:
     """Execute stages in topological order, using the cache when possible."""
+    if persistence.WORKTREE_DIRTY:
+        warnings.warn(
+            f"Cache may be stale: working tree has uncommitted changes. "
+            f"Delete {cache_dir} if you get unexpected results.",
+            UserWarning,
+            stacklevel=2,
+        )
     _validate_no_duplicate_produces(stages)
     sorted_stages = _topo_sort(stages, frozenset(initial_artifacts))
 

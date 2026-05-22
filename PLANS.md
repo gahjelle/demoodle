@@ -98,10 +98,14 @@ Update future work items based on decisions made.
 
 ### W8. CharTokenizer + train_tokenizer stage
 - **Goal:** the tokenizer seam, trivial implementation.
-- **Build:** `CharTokenizer` (build `{char:id}` from corpus; `encode`/`decode`/
-  `vocab_size`) and a `train_tokenizer` stage `corpus -> tokenizer`.
+- **Build:** `CharTokenizer` frozen dataclass (`{char:id}` mapping built from
+  corpus; `encode`/`decode`/`vocab_size` satisfying `TokenizerProtocol`
+  structurally — no inheritance). Add `CharTokenizer` to the `Artifact` union
+  in `core/types.py`. A `train_tokenizer` stage `corpus -> tokenizer` produces
+  a `CharTokenizer`. Add a `CharTokenizer` branch to `_hash_artifact` in
+  `shell/persistence.py`.
 - **Done when:** `decode(encode(s)) == s` for sample strings; stage produces a
-  `Tokenizer` artifact via the runner.
+  `CharTokenizer` artifact via the runner.
 - **Depends on:** W4, W6, W7
 
 ### W9. build_dataset stage
@@ -114,11 +118,15 @@ Update future work items based on decisions made.
 
 ### W10. Learned-bigram architecture
 - **Goal:** the first real, trainable model.
-- **Build:** `architectures/bigram.py` — V×V weight matrix; `init_state`,
-  `forward(policy, tokens) -> Output` (logits); implement `Inspectable.call`
-  (next-token softmax + temperature sampling); `explain` returns `{}`.
-- **Done when:** `forward` is deterministic under fixed seed; `call` samples valid
-  token ids; temperature changes the distribution sharpness (tested).
+- **Build:** `architectures/bigram.py` — V×V weight matrix. `BigramArchitecture`
+  takes `vocab_size` at construction and satisfies both `ArchitectureProtocol`
+  and `InspectableProtocol`. `init_state(rng: RNG) -> Policy` (config bound at
+  construction, pure function of rng); `forward(policy, tokens) -> Output`
+  (logits); `call(seq, temperature) -> Output` (softmax + sampling, returns
+  logits and sampled token id); `explain(seq) -> {}` (inherited default).
+- **Done when:** `forward` is deterministic under fixed seed; `call` returns an
+  `Output` with `sampled_ids` set; temperature changes the distribution sharpness
+  (tested).
 - **Depends on:** W3, W4, W8
 
 ### W11. pretrain stage
@@ -182,8 +190,10 @@ Update future work items based on decisions made.
 
 ### W17. Byte-level BPE tokenizer
 - **Goal:** real, learned tokenization.
-- **Build:** ~50–80-line byte-level BPE implementing the `Tokenizer` protocol;
-  learns merges from a corpus.
+- **Build:** `BpeTokenizer` frozen dataclass — ~50–80-line byte-level BPE
+  satisfying `TokenizerProtocol` structurally; learns merges from a corpus.
+  Add `BpeTokenizer` to the `Artifact` union in `core/types.py` and add a
+  `BpeTokenizer` branch to `_hash_artifact` in `shell/persistence.py`.
 - **Done when:** round-trips text; trains on TinyShakespeare in seconds; vocab
   size configurable.
 - **Depends on:** W8

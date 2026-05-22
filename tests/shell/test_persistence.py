@@ -8,7 +8,7 @@ import torch
 from torch import nn
 
 from demoodle.core.rng import RNG
-from demoodle.core.types import Artifact, Corpus, Dataset, Metrics, Policy, Tokenizer
+from demoodle.core.types import Artifact, Corpus, Dataset, Metrics, Policy
 from demoodle.ports import Stage
 from demoodle.shell.persistence import _hash_artifact, cache_key, load, save
 
@@ -66,13 +66,6 @@ def test_hash_dataset_stable_and_sensitive() -> None:
     assert _hash_artifact(d1) != _hash_artifact(d2)
 
 
-def test_hash_tokenizer_stable_and_sensitive() -> None:
-    t1 = Tokenizer(vocab_size=10)
-    t2 = Tokenizer(vocab_size=20)
-    assert _hash_artifact(t1) == _hash_artifact(t1)
-    assert _hash_artifact(t1) != _hash_artifact(t2)
-
-
 def test_hash_policy_stable_and_sensitive() -> None:
     model_a = nn.Linear(2, 2)
     model_b = nn.Linear(2, 2)
@@ -81,6 +74,13 @@ def test_hash_policy_stable_and_sensitive() -> None:
     p2 = Policy(model=model_b)
     assert _hash_artifact(p1) == _hash_artifact(p1)
     assert _hash_artifact(p1) != _hash_artifact(p2)
+
+
+def test_hash_policy_differs_when_value_head_differs() -> None:
+    model = nn.Linear(2, 2)
+    p_no_head = Policy(model=model)
+    p_with_head = Policy(model=model, value_head=nn.Linear(2, 1))
+    assert _hash_artifact(p_no_head) != _hash_artifact(p_with_head)
 
 
 # ---------------------------------------------------------------------------
@@ -136,6 +136,31 @@ def test_git_id_falls_back_in_non_repo() -> None:
     with patch("subprocess.run", side_effect=subprocess.CalledProcessError(128, "git")):
         git_id = persistence._git_id()
     assert git_id == ""
+
+
+def test_is_worktree_dirty_true_when_output_nonempty() -> None:
+    from demoodle.shell import persistence  # noqa: PLC0415
+
+    mock_result = subprocess.CompletedProcess(
+        args=[], returncode=0, stdout=" M src/foo.py\n"
+    )
+    with patch("subprocess.run", return_value=mock_result):
+        assert persistence.is_worktree_dirty() is True
+
+
+def test_is_worktree_dirty_false_when_output_empty() -> None:
+    from demoodle.shell import persistence  # noqa: PLC0415
+
+    mock_result = subprocess.CompletedProcess(args=[], returncode=0, stdout="")
+    with patch("subprocess.run", return_value=mock_result):
+        assert persistence.is_worktree_dirty() is False
+
+
+def test_is_worktree_dirty_false_when_git_unavailable() -> None:
+    from demoodle.shell import persistence  # noqa: PLC0415
+
+    with patch("subprocess.run", side_effect=FileNotFoundError):
+        assert persistence.is_worktree_dirty() is False
 
 
 def test_cache_key_returns_string_when_no_git() -> None:

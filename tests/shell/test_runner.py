@@ -1,6 +1,8 @@
 """Tests for shell/runner.py — topological stage executor."""
 
+import warnings
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -42,6 +44,38 @@ def _stage(  # noqa: PLR0913
 
 def _rng(seed: int = 0) -> RNG:
     return RNG(seed=seed)
+
+
+# ---------------------------------------------------------------------------
+# 0. Dirty-worktree warning
+# ---------------------------------------------------------------------------
+
+
+def test_dirty_worktree_emits_user_warning(tmp_path: Path) -> None:
+    s = _stage("s", needs=[], produces=["out"])
+    with (
+        patch("demoodle.shell.persistence.WORKTREE_DIRTY", new=True),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        run([s], {}, _rng(), tmp_path)
+    assert any(
+        issubclass(w.category, UserWarning)
+        and "uncommitted" in str(w.message)
+        and str(tmp_path) in str(w.message)
+        for w in caught
+    )
+
+
+def test_clean_worktree_emits_no_warning(tmp_path: Path) -> None:
+    s = _stage("s", needs=[], produces=["out"])
+    with (
+        patch("demoodle.shell.persistence.WORKTREE_DIRTY", new=False),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        run([s], {}, _rng(), tmp_path)
+    assert not any(issubclass(w.category, UserWarning) for w in caught)
 
 
 # ---------------------------------------------------------------------------

@@ -18,14 +18,14 @@ The system SHALL provide a `TokenizerProtocol` in `demoodle.ports.protocols` wit
 - **THEN** the result equals the original string
 
 ### Requirement: ArchitectureProtocol defines the training interface
-The system SHALL provide an `ArchitectureProtocol` with `init_state` (returns a `Policy`) and `forward(policy: Policy, tokens: Seq) -> Output`. The exact signature of `init_state` is left open for W10 to specify; the protocol declares its presence.
+The system SHALL provide an `ArchitectureProtocol` with `init_state(rng: RNG) -> Policy` and `forward(policy: Policy, tokens: Seq) -> Output`. Architecture classes bind their hyperparameters (vocab size, hidden dimensions, etc.) at construction time; `init_state` is a pure function of `rng` only.
 
 #### Scenario: Dummy class satisfies ArchitectureProtocol
 - **WHEN** a class implements `init_state` and `forward` with compatible return types
 - **THEN** it type-checks as a valid `ArchitectureProtocol` with no errors
 
 ### Requirement: InspectableProtocol defines the inference and inspection interface
-The system SHALL provide an `InspectableProtocol` where `call(seq: Seq, temperature: float) -> int` is required and `explain() -> dict[str, Any]` is optional with a default body returning `{}`. Implementations that do not override `explain` inherit the default.
+The system SHALL provide an `InspectableProtocol` where `call(seq: Seq, temperature: float) -> Output` is required and `explain(seq: Seq) -> dict[str, Any]` is optional with a default body returning `{}`. Implementations that do not override `explain` inherit the default. `call` returns an `Output` containing both `logits` (the full distribution over the vocabulary) and `sampled_ids` (the single drawn token id), enabling front ends to visualise the probability distribution without a second forward pass. `explain` is a pure function of `seq` — it re-runs inference internally and returns arch-specific internals (e.g. attention weights); no mutable internal buffers.
 
 #### Scenario: Dummy class with only `call` satisfies InspectableProtocol
 - **WHEN** a class implements only `call`

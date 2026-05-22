@@ -23,13 +23,6 @@ class Corpus:
 
 
 @dataclass(frozen=True)
-class Tokenizer:
-    """Tokenizer artifact — minimal base holding vocabulary size."""
-
-    vocab_size: int
-
-
-@dataclass(frozen=True)
 class Dataset:
     """Encoded corpus as a flat sequence of token IDs."""
 
@@ -53,5 +46,6 @@ class Metrics:
 
 
 # Artifact is the tagged union of all pipeline values.
+# CharTokenizer (W8) and BpeTokenizer (W17) join when implemented.
 # RewardModel and PreferenceData will be added in Milestone 5 (W21).
-type Artifact = Corpus | Tokenizer | Dataset | Policy | Metrics
+type Artifact = Corpus | Dataset | Policy | Metrics

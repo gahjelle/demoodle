@@ -45,7 +45,10 @@ explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["ignore::UserWarning:torch"]
+filterwarnings = [
+    "ignore::UserWarning:torch",
+    "ignore:Cache may be stale:UserWarning",
+]
 
 [tool.ruff]
 target-version = "py314"

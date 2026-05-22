@@ -44,6 +44,17 @@ The system SHALL provide `save(key, artifacts, cache_dir)` and `load(key, cache_
 - **WHEN** `load` is called with a key that has never been saved
 - **THEN** it returns `None`
 
+### Requirement: Warn when working tree is dirty
+At runner start-up, if the git working tree has uncommitted changes, the runner SHALL emit a `UserWarning` naming the cache directory. This warns developers that cached results may not reflect their latest edits. When git is unavailable or the directory is not a git repository, no warning is emitted.
+
+#### Scenario: Dirty worktree emits UserWarning naming cache dir
+- **WHEN** the runner is called and the working tree has uncommitted changes
+- **THEN** a `UserWarning` is emitted that includes the cache directory path
+
+#### Scenario: Clean worktree emits no warning
+- **WHEN** the runner is called and the working tree is clean
+- **THEN** no `UserWarning` is emitted
+
 ### Requirement: Git ID falls back gracefully when git is unavailable
 The system SHALL attempt to read the git short commit hash at module import time. If git is not installed or the working directory is not a git repository, it SHALL fall back to an empty string without raising an error.
 

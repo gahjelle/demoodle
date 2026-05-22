@@ -103,7 +103,8 @@ different plumbing.
 Everything produced or consumed is an immutable, named **Artifact** (a tagged
 union):
 - `Corpus` — raw training text.
-- `Tokenizer` — encode/decode + vocab (char map or learned BPE merges).
+- `CharTokenizer` / `BpeTokenizer` — concrete tokenizer artifacts; each satisfies
+  `TokenizerProtocol` structurally (encode/decode + vocab). No shared base class.
 - `Dataset` — tokenized, batched training data derived from a corpus + tokenizer.
 - `Policy` — a trained model (architecture + weights). The thing that generates.
   Carries an **optional, nullable value head** (`None` except during PPO).
@@ -123,9 +124,10 @@ A **Stage** is a pure transform that declares its dependencies by name:
 @dataclass(frozen=True)
 class Stage:
     name: str
-    needs: tuple[str, ...]      # e.g. ("sft_policy", "reward_model")
-    produces: str               # e.g. "rlhf_policy"
-    run: Callable[[Mapping[str, Artifact], RNG], Artifact]   # pure
+    needs: list[str]                  # e.g. ["sft_policy", "reward_model"]
+    produces: list[str]               # e.g. ["rlhf_policy"] or ["base_policy", "metrics"]
+    config_hash: str                  # hash of pydantic config affecting this stage's output
+    run: Callable[[dict[str, Artifact], RNG], dict[str, Artifact]]   # pure
 ```
 
 The shell **topologically sorts** the declared stages and executes them, caching
@@ -149,29 +151,27 @@ preference_data ─> train_reward_model ─> reward_model ───────�
 ### Protocols (the swap points)
 
 ```python
-class Tokenizer(Protocol):
+class TokenizerProtocol(Protocol):
     def encode(self, text: str) -> list[int]: ...
     def decode(self, ids: list[int]) -> str: ...
-    @property
-    def vocab_size(self) -> int: ...
+    vocab_size: int
 
-class Architecture(Protocol):
-    def init_state(self, cfg: Config, rng: RNG) -> Policy: ...
+class ArchitectureProtocol(Protocol):
+    def init_state(self, ...) -> Policy: ...   # exact signature defined in W10
     def forward(self, policy: Policy, tokens: Seq) -> Output: ...   # logits
 
-class Inspectable(Protocol):
-    def call(self, prompt: Seq, temperature: float) -> Output: ...  # universal:
-        # next-token distribution + sampling. Every architecture has this.
-    def explain(self, prompt: Seq) -> dict[str, Any]: ...           # optional:
-        # arch-specific internals (attention maps, embeddings). Feature-detected.
-
-class Frontend(Protocol):
-    # renders the shell's outputs; CLI / web / notebook all implement this.
-    ...
+class InspectableProtocol(Protocol):
+    def call(self, seq: Seq, temperature: float) -> Output: ...     # universal:
+        # full next-token distribution + sampled id. Every architecture has this.
+    def explain(self, seq: Seq) -> dict[str, Any]: ...              # optional:
+        # arch-specific internals (attention maps, etc). Defaults to {}.
+        # Pure function — re-runs inference internally; no mutable state.
 ```
 
 `call` is universal; `explain` is best-effort. A bigram has no attention map and
 simply omits it; a transformer fills it in. Front ends feature-detect.
+
+Note: there is no `Frontend` protocol — the real front-end seam is the shell API (W26).
 
 ### RNG
 RNG is a small **value type** with `.split()` (JAX-style), threaded explicitly.

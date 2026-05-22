@@ -52,9 +52,11 @@ Import site is unambiguous:
 
 ---
 
-## `InspectableProtocol.explain` — default body requires inheritance
+## `InspectableProtocol.explain` — stateless, default body requires inheritance
 
-`explain()` has a default body returning `{}` in the Protocol class. This default is **only inherited if a class explicitly subclasses `InspectableProtocol`**. Structural implementors (classes that implement the right methods without inheriting) do not get the default:
+`explain(seq: Seq) -> dict[str, Any]` is a pure function: it takes the same context sequence as `call` and re-runs inference internally to produce arch-specific interpretability data (e.g. attention weights). No mutable internal buffers; no implicit ordering requirement relative to `call`.
+
+The default body returns `{}` and is **only inherited if a class explicitly subclasses `InspectableProtocol`**. Structural implementors (classes that implement the right methods without inheriting) do not get the default:
 
 ```python
 # Gets the default explain():
@@ -97,9 +99,16 @@ Three-way splits chain two calls: `a, tmp = rng.split(); b, c = tmp.split()`.
 
 ---
 
-## `Tokenizer` artifact vs. `CharTokenizer` (W8)
+## Tokenizer artifacts — concrete types go in the `Artifact` union (W8, W17)
 
-The `Tokenizer` artifact in `core/types.py` holds only `vocab_size: int`. `CharTokenizer` (W8) will be a **separate class** satisfying `TokenizerProtocol` — it will NOT subclass `Tokenizer`. The `Tokenizer` artifact remains a minimal data carrier; the actual tokenizer logic lives in the protocol implementor. The `Artifact` union stays unchanged for W8.
+There is no shared `Tokenizer` base artifact. Instead, concrete tokenizer types are added to the `Artifact` union directly:
+
+- **W8**: `CharTokenizer` frozen dataclass added; the `Tokenizer` placeholder removed.
+- **W17**: `BpeTokenizer` frozen dataclass added.
+
+Both satisfy `TokenizerProtocol` structurally — no inheritance. Stages receive whichever concrete type is in the artifact dict and call `encode`/`decode`/`vocab_size` through the protocol. `_hash_artifact` in `shell/persistence.py` gets one branch per concrete type.
+
+The current `Tokenizer(vocab_size=int)` stub in `core/types.py` is a transitional placeholder; remove it in W8.
 
 ---
 
@@ -114,6 +123,19 @@ Stage(name="pretrain", ..., config_hash=config_hash, run=run)
 ```
 
 Stages whose output is independent of all config pass `config_hash=""` explicitly — this is intentional documentation, not an omission. The cache key (`shell/persistence.py`) combines this hash with the stage name, code version, input artifact hashes, and RNG seed.
+
+---
+
+## `ArchitectureProtocol.init_state` — config bound at construction (W10)
+
+`init_state(self, rng: RNG) -> Policy`. The architecture object holds its own hyperparameters (vocab size, hidden size, etc.) — it is the configured instance. Config gets bound when the architecture is constructed, not when `init_state` is called:
+
+```python
+bigram = BigramArchitecture(vocab_size=27)
+policy = bigram.init_state(rng)   # pure function of rng only
+```
+
+This keeps `init_state` a pure function of `rng` and avoids threading config through the stage's artifact dict.
 
 ---
 
