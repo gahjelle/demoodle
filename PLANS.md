@@ -6,11 +6,14 @@
 
 See VISION.md for information about the final vision, the end-goal.
 
+These plans are not fully authoritative, question details during implementation.
+Update future work items based on decisions made.
+
 ---
 
 ## Milestone 0 — Foundations (pure core types & seams)
 
-### ✅ W1. Project skeleton & tooling 
+### ✅ W1. Project skeleton & tooling
 - **Goal:** empty but importable package with the directory layout from the
   Day-One doc, plus test/lint/format config.
 - **Build:** `demoodle/` packages with `__init__.py`, `pyproject.toml`, PyTorch
@@ -35,7 +38,7 @@ See VISION.md for information about the final vision, the end-goal.
   frozen/immutable.
 - **Depends on:** W1
 
-### W3. RNG value type
+### ✅ W3. RNG value type
 - **Goal:** deterministic, explicit randomness.
 - **Build:** small `RNG` wrapping a seed/key with `.split() -> (RNG, RNG)` and
   helpers to draw what training needs (e.g. a torch generator from the key). No
@@ -46,11 +49,16 @@ See VISION.md for information about the final vision, the end-goal.
 
 ### W4. Protocols / ports
 - **Goal:** define every swap point now, even if unused.
-- **Build:** in `ports/protocols.py`: `Tokenizer`, `Architecture`, `Inspectable`
-  (`call` required, `explain` optional returning `{}` by default), `Frontend`,
-  and the `Stage` frozen dataclass (`name`, `needs`, `produces`, `run`).
+- **Build:** in `ports/protocols.py`: `TokenizerProtocol`, `ArchitectureProtocol`,
+  `InspectableProtocol` (`call` required, `explain` optional returning `{}` by
+  default), and the `Stage` frozen dataclass (`name: str`, `needs: list[str]`,
+  `produces: list[str]`, `run`). All protocols use the `Protocol` suffix to avoid
+  shadowing artifact types in `core/types`. No `FrontendProtocol` — the real frontend
+  seam is the W26 shell API.
+  `Stage.run` signature includes `RNG` so stages are pure functions of their inputs:
+  `Callable[[dict[str, Artifact], RNG], dict[str, Artifact]]`.
 - **Done when:** protocols import; a dummy class type-checks against each.
-- **Depends on:** W2
+- **Depends on:** W2, W3
 
 ---
 
@@ -271,11 +279,13 @@ See VISION.md for information about the final vision, the end-goal.
 - **Done when:** CLI can dump any of these as text/JSON; no front end touches core.
 - **Depends on:** W12, W15, W24, W25
 
-### W27. Notebook front end
-- **Goal:** inline plots.
-- **Build:** a notebook implementing `Frontend` that calls the W26 API and plots
-  loss curves, attention heatmaps, BPE merges, RLHF dashboards.
-- **Done when:** one notebook walks all three axes with real charts.
+### W27. TUI front end
+- **Goal:** a rich terminal interface for the demo.
+- **Build:** a TUI (e.g. Textual) that calls the W26 API and displays loss curves,
+  generation output, attention data, and RLHF dashboards as terminal widgets.
+  Complements the CLI (W12) with a live, interactive view.
+- **Done when:** a presenter can drive all three axes from the terminal with visible
+  live updates; uses only the shell/W26 API.
 - **Depends on:** W26
 
 ### W28. Web front end (interactive showpiece)
