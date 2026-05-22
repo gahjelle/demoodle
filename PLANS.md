@@ -47,7 +47,7 @@ Update future work items based on decisions made.
   confirms two splits diverge but each is stable.
 - **Depends on:** W2
 
-### W4. Protocols / ports
+### ✅ W4. Protocols / ports
 - **Goal:** define every swap point now, even if unused.
 - **Build:** in `ports/protocols.py`: `TokenizerProtocol`, `ArchitectureProtocol`,
   `InspectableProtocol` (`call` required, `explain` optional returning `{}` by
