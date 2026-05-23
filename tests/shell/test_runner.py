@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-def _stage(  # noqa: PLR0913
+def _stage(
     name: str,
     needs: list[str],
     produces: list[str],

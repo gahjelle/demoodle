@@ -52,7 +52,7 @@ A structural interface (`ports/protocols.py`) defining a behavioral contract. Cl
 **Named protocols:**
 - `TokenizerProtocol` — `encode(text) -> list[int]`, `decode(ids) -> str`, `vocab_size: int`
 - `ArchitectureProtocol` — `init_state(rng: RNG) -> Policy` (config bound at construction), `forward(policy, tokens) -> Output`
-- `InspectableProtocol` — `call(seq, temperature, top_k=None, top_p=None) -> Output`, `explain(seq) -> dict` (optional, defaults to `{}`)
+- `InspectableProtocol` — `call(seq, policy, rng, temperature, top_k=None, top_p=None) -> Output`, `explain(seq, policy) -> dict` (optional, defaults to `{}`)
 
 ---
 
@@ -64,7 +64,9 @@ The artifact holding a trained model: a frozen dataclass with `model: nn.Module`
 
 ## InspectableProtocol
 
-The inference and inspection interface. `call(seq, temperature, top_k=None, top_p=None) -> Output` returns the full probability distribution (logits) plus the sampled next token, allowing front ends to visualise the distribution without a second forward pass. `explain(seq) -> dict` is a pure function returning arch-specific internals (e.g. attention weights for transformers); it re-runs inference internally and carries no mutable state. Architectures without meaningful internals inherit the default `explain` returning `{}` by subclassing `InspectableProtocol`.
+The inference and inspection interface. `call(seq, policy, rng, temperature, top_k=None, top_p=None) -> Output` returns the full probability distribution (logits) plus the sampled next token, allowing front ends to visualise the distribution without a second forward pass. `explain(seq, policy) -> dict` returns arch-specific internals (e.g. attention weights for transformers); default returns `{}`.
+
+Both methods take `policy` explicitly — architectures are stateless config/logic and never hold a `Policy` reference internally. This mirrors `ArchitectureProtocol.forward(policy, tokens)`: all model state lives in `Policy`, and architectures are pure functions of their inputs.
 
 ---
 

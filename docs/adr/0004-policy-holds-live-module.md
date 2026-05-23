@@ -45,3 +45,14 @@ retrofitted when the PPO stage is added.
 - The architecture class is not stored in `Policy` — callers that need to
   reconstruct the model (e.g. to change device) must retain the architecture object
   separately
+- The inverse also holds: **architectures do not store `Policy` internally**.
+  `InspectableProtocol.call(seq, policy, rng, ...)` and `explain(seq, policy)` both
+  receive `policy` explicitly, mirroring `ArchitectureProtocol.forward(policy,
+  tokens)`. Architectures are stateless config/logic; all model state lives in
+  `Policy`. This was decided during W10 exploration — the alternative (architecture
+  holds policy after `init_state`) would have made architectures stateful and broken
+  the functional-core invariant.
+- `InspectableProtocol.call` takes `rng: RNG` as a required positional argument
+  (after `policy`, before `temperature`), matching the `Stage.run(artifacts, rng)`
+  and `init_state(rng)` convention. Sampling is always deterministic under a given
+  seed; callers that want variety split the RNG on each call.

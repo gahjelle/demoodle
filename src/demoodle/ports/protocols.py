@@ -39,11 +39,19 @@ class ArchitectureProtocol(Protocol):
 class InspectableProtocol(Protocol):
     """Sample next tokens and optionally expose internals."""
 
-    def call(self, seq: Seq, temperature: float) -> Output:
+    def call(
+        self,
+        seq: Seq,
+        policy: Policy,
+        rng: RNG,
+        temperature: float,
+        top_k: int | None = None,
+        top_p: float | None = None,
+    ) -> Output:
         """Return logits and sampled next token id for the given context."""
         ...
 
-    def explain(self, seq: Seq) -> dict[str, Any]:  # noqa: ARG002
+    def explain(self, seq: Seq, policy: Policy) -> dict[str, Any]:  # noqa: ARG002
         """Return interpretability data for the given context; default is empty."""
         return {}
 

@@ -81,36 +81,55 @@ def test_architecture_protocol_dummy_satisfies() -> None:
 
 
 class _MinimalInspectable(InspectableProtocol):
-    def call(self, seq: Seq, temperature: float) -> Output:  # noqa: ARG002
+    def call(
+        self,
+        seq: Seq,  # noqa: ARG002
+        policy: Policy,  # noqa: ARG002
+        rng: RNG,  # noqa: ARG002
+        temperature: float,  # noqa: ARG002
+        top_k: int | None = None,  # noqa: ARG002
+        top_p: float | None = None,  # noqa: ARG002
+    ) -> Output:
         return Output(
             logits=torch.zeros(4), sampled_ids=torch.zeros(1, dtype=torch.long)
         )
 
 
 class _FullInspectable:
-    def call(self, seq: Seq, temperature: float) -> Output:  # noqa: ARG002
+    def call(
+        self,
+        seq: Seq,  # noqa: ARG002
+        policy: Policy,  # noqa: ARG002
+        rng: RNG,  # noqa: ARG002
+        temperature: float,  # noqa: ARG002
+        top_k: int | None = None,  # noqa: ARG002
+        top_p: float | None = None,  # noqa: ARG002
+    ) -> Output:
         return Output(
             logits=torch.zeros(4), sampled_ids=torch.zeros(1, dtype=torch.long)
         )
 
-    def explain(self, seq: Seq) -> dict[str, Any]:  # noqa: ARG002
+    def explain(self, seq: Seq, policy: Policy) -> dict[str, Any]:  # noqa: ARG002
         return {"attention": [[0.5, 0.5]]}
 
 
 def test_inspectable_protocol_minimal_satisfies() -> None:
+    dummy_policy = Policy(model=nn.Linear(4, 4))
     obj: InspectableProtocol = _MinimalInspectable()
-    result = obj.call(torch.zeros(1, dtype=torch.long), 1.0)
+    result = obj.call(torch.zeros(1, dtype=torch.long), dummy_policy, RNG(seed=0), 1.0)
     assert result.sampled_ids is not None
 
 
 def test_inspectable_protocol_explain_default_returns_empty_dict() -> None:
+    dummy_policy = Policy(model=nn.Linear(4, 4))
     obj: InspectableProtocol = _MinimalInspectable()
-    assert obj.explain(torch.zeros(1, dtype=torch.long)) == {}
+    assert obj.explain(torch.zeros(1, dtype=torch.long), dummy_policy) == {}
 
 
 def test_inspectable_protocol_explain_override_returns_custom_data() -> None:
+    dummy_policy = Policy(model=nn.Linear(4, 4))
     obj: InspectableProtocol = _FullInspectable()
-    result = obj.explain(torch.zeros(1, dtype=torch.long))
+    result = obj.explain(torch.zeros(1, dtype=torch.long), dummy_policy)
     assert "attention" in result
 
 

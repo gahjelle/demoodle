@@ -50,11 +50,16 @@ Update future work items based on decisions made.
 ### ✅ W4. Protocols / ports
 - **Goal:** define every swap point now, even if unused.
 - **Build:** in `ports/protocols.py`: `TokenizerProtocol`, `ArchitectureProtocol`,
-  `InspectableProtocol` (`call` required, `explain` optional returning `{}` by
-  default), and the `Stage` frozen dataclass (`name: str`, `needs: list[str]`,
-  `produces: list[str]`, `run`). All protocols use the `Protocol` suffix to avoid
-  shadowing artifact types in `core/types`. No `FrontendProtocol` — the real frontend
-  seam is the W28 shell API.
+  `InspectableProtocol` (`call(seq, policy, rng, temperature, top_k=None, top_p=None)`
+  required; `explain(seq, policy)` optional returning `{}` by default), and the
+  `Stage` frozen dataclass (`name: str`, `needs: list[str]`, `produces: list[str]`,
+  `run`). All protocols use the `Protocol` suffix to avoid shadowing artifact types
+  in `core/types`. No `FrontendProtocol` — the real frontend seam is the W28 shell
+  API.
+  **`InspectableProtocol` takes `policy` explicitly in both `call` and `explain`**
+  — architectures are stateless config/logic; all model state lives in `Policy`.
+  This mirrors `ArchitectureProtocol.forward(policy, tokens)` and means no
+  architecture ever holds a `Policy` reference internally.
   `Stage.run` signature includes `RNG` so stages are pure functions of their inputs:
   `Callable[[dict[str, Artifact], RNG], dict[str, Artifact]]`.
 - **Done when:** protocols import; a dummy class type-checks against each.
@@ -116,17 +121,20 @@ Update future work items based on decisions made.
   inputs shifted by one.
 - **Depends on:** W8
 
-### W10. Learned-bigram architecture
+### ✅ W10. Learned-bigram architecture
 - **Goal:** the first real, trainable model.
 - **Build:** `architectures/bigram.py` — V×V weight matrix. `BigramArchitecture`
   takes `vocab_size` at construction and satisfies both `ArchitectureProtocol`
   and `InspectableProtocol`. `init_state(rng: RNG) -> Policy` (config bound at
   construction, pure function of rng); `forward(policy, tokens) -> Output`
-  (logits); `call(seq, temperature, top_k=None, top_p=None) -> Output` (softmax +
-  sampling, returns logits and sampled token id). **Put `top_k`/`top_p` in the
-  `call` seam now** even though they barely matter for the bigram — they pay off
-  for the transformer + code corpus (low-temp/top-k yields more valid code) and we
-  never want to retrofit the signature. `explain(seq) -> {}` (inherited default).
+  (logits); `call(seq, policy, rng, temperature, top_k=None, top_p=None) -> Output`
+  (softmax + sampling, returns logits and sampled token id). **Put `top_k`/`top_p`
+  in the `call` seam now** even though they barely matter for the bigram — they pay
+  off for the transformer + code corpus (low-temp/top-k yields more valid code) and
+  we never want to retrofit the signature. **`policy` is passed explicitly** — the
+  architecture is stateless config/logic; it never holds a `Policy` reference
+  internally (mirrors `forward`'s design). `explain(seq, policy) -> {}` (inherited
+  default).
 - **Done when:** `forward` is deterministic under fixed seed; `call` returns an
   `Output` with `sampled_ids` set; temperature changes the distribution sharpness
   (tested); top-k/top-p restrict the sampled set (tested).
