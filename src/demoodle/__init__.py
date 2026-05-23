@@ -1,8 +1,5 @@
 """Demoodle — a pedagogical, runnable LLM demo."""
 
-from demoodle.frontends.cli import app
+import warnings
 
-
-def main() -> None:
-    """Entry point."""
-    app()
+warnings.filterwarnings("ignore", message="Failed to initialize NumPy")

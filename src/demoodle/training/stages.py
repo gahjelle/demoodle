@@ -10,6 +10,8 @@ from demoodle.core.types import Dataset, TrainingMetrics
 from demoodle.ports.protocols import Stage
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from demoodle.config.schemas import PretrainConfig
     from demoodle.core.rng import RNG
     from demoodle.core.types import Artifact
@@ -24,7 +26,11 @@ def _config_hash(arch: ArchitectureProtocol, config: PretrainConfig) -> str:
     return h.hexdigest()
 
 
-def make_pretrain_stage(arch: ArchitectureProtocol, config: PretrainConfig) -> Stage:
+def make_pretrain_stage(
+    arch: ArchitectureProtocol,
+    config: PretrainConfig,
+    on_step: Callable[[int, float], None] | None = None,
+) -> Stage:
     """Return a Stage that trains `arch` on a dataset.
 
     Produces ``base_policy`` and ``metrics`` artifacts.
@@ -44,7 +50,7 @@ def make_pretrain_stage(arch: ArchitectureProtocol, config: PretrainConfig) -> S
         generator = rng.generator()
         losses: list[float] = []
 
-        for _ in range(config.n_steps):
+        for step in range(config.n_steps):
             offsets = torch.randint(
                 n - context_len, (config.batch_size,), generator=generator
             )
@@ -59,6 +65,8 @@ def make_pretrain_stage(arch: ArchitectureProtocol, config: PretrainConfig) -> S
             optimizer.step()
 
             losses.append(loss.item())
+            if on_step is not None:
+                on_step(step, loss.item())
 
         return {
             "base_policy": policy,

@@ -64,7 +64,7 @@ def run(
             f"Cache may be stale: working tree has uncommitted changes. "
             f"Delete {cache_dir} if you get unexpected results.",
             UserWarning,
-            stacklevel=2,
+            stacklevel=1,
         )
     _validate_no_duplicate_produces(stages)
     sorted_stages = _topo_sort(stages, frozenset(initial_artifacts))

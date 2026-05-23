@@ -148,7 +148,7 @@ Update future work items based on decisions made.
   re-run hits cache.
 - **Depends on:** W9, W10
 
-### W12. CLI front end (train + call)
+### ✅ W12. CLI front end (train + call)
 - **Goal:** a human can drive the slice.
 - **Build:** `frontends/cli.py` — `train` builds & runs the day-one graph and
   prints the loss curve as text; `call --temperature` loads `base_policy` and

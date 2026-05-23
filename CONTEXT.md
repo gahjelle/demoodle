@@ -119,3 +119,20 @@ The three layers of the architecture:
 - **Core** (`core/`, and stage logic): pure and deterministic. Data in, data out. No disk, no clock, no printing. RNG is passed explicitly.
 - **Shell** (`shell/`): owns all I/O, RNG sourcing, caching, and orchestration. The **Runner** and **Artifact Cache** live here.
 - **Front ends** (`frontends/`): interchangeable views (CLI, TUI, web). All consume the shell's API; none touch core directly.
+
+---
+
+## CLI front end (`demoo`)
+
+The plain-text front end. Two commands:
+
+- **`demoo train`**: assembles and runs the day-one pipeline, displays a live braille sparkline during training, prints a static summary (with sparkline from cached metrics) on subsequent runs.
+- **`demoo call`**: runs the pipeline (cache hit or auto-train via `train()`), then generates `n` text continuations using `arch.call()` with a configurable temperature and prompt.
+
+Both live in `frontends/cli.py`.
+
+---
+
+## Sparkline
+
+A single-line braille progress+loss visualization used by `demoo train`. Cells use `⠀⣀⣤⣶⣿` (four height levels). Bars are normalized to `[initial_loss, 0]`: full bar (`⣿`) = initial loss, empty (`⠀`) = zero loss. Cells fill left-to-right as training progresses; the filled/empty boundary is the progress indicator.

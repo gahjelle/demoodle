@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-demoodle = "demoodle:main"
+demoodle = "demoodle.frontends.cli:app"
 demoo = "demoodle.frontends.cli:app"
 
 [dependency-groups]
