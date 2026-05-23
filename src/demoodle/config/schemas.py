@@ -67,12 +67,18 @@ class TokenizersConfig(StrictModel):
     bpe: BPEConfig
 
 
-class TrainingConfig(StrictModel):
-    """Shared training loop hyperparameters."""
+class PretrainConfig(StrictModel):
+    """Hyperparameters for the pretrain stage."""
 
     learning_rate: float
     batch_size: int
     n_steps: int
+
+
+class TrainingConfig(StrictModel):
+    """Per-stage training hyperparameters."""
+
+    pretrain: PretrainConfig
 
 
 class CorpusEntryConfig(StrictModel):

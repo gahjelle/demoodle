@@ -78,6 +78,15 @@ def test_init_state_different_seeds_differ(arch: BigramArchitecture) -> None:
 
 
 # ---------------------------------------------------------------------------
+# context_length
+# ---------------------------------------------------------------------------
+
+
+def test_context_length_is_one(arch: BigramArchitecture) -> None:
+    assert arch.context_length == 1
+
+
+# ---------------------------------------------------------------------------
 # forward
 # ---------------------------------------------------------------------------
 

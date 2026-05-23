@@ -14,6 +14,7 @@ from demoodle.config.schemas import (
     DemoodleConfig,
     MLPConfig,
     PathsConfig,
+    PretrainConfig,
     TokenizersConfig,
     TrainingConfig,
 )
@@ -51,6 +52,14 @@ def test_config_architecture_env_override(monkeypatch: pytest.MonkeyPatch) -> No
     # Restore original state for other tests
     monkeypatch.delenv("DEMOODLE_ARCHITECTURE", raising=False)
     importlib.reload(_cfg_module)
+
+
+def test_config_pretrain_section_is_typed() -> None:
+    pretrain = config.training.pretrain
+    assert isinstance(pretrain, PretrainConfig)
+    assert pretrain.learning_rate > 0
+    assert pretrain.batch_size > 0
+    assert pretrain.n_steps > 0
 
 
 def test_config_mlp_section_is_typed() -> None:

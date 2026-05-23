@@ -9,9 +9,9 @@ from demoodle.core.types import (
     Artifact,
     Corpus,
     Dataset,
-    Metrics,
     Output,
     Policy,
+    TrainingMetrics,
 )
 from demoodle.tokenizers.char import CharTokenizer
 
@@ -89,17 +89,17 @@ def test_policy_is_frozen() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Metrics
+# TrainingMetrics
 # ---------------------------------------------------------------------------
 
 
 def test_metrics_holds_losses() -> None:
-    m = Metrics(losses=[1.0, 0.8, 0.6])
+    m = TrainingMetrics(losses=[1.0, 0.8, 0.6])
     assert m.losses == [1.0, 0.8, 0.6]
 
 
 def test_metrics_is_frozen() -> None:
-    m = Metrics(losses=[1.0])
+    m = TrainingMetrics(losses=[1.0])
     with pytest.raises(dataclasses.FrozenInstanceError):
         m.losses = [0.5]  # ty: ignore[invalid-assignment]
 
@@ -111,4 +111,4 @@ def test_metrics_is_frozen() -> None:
 
 def test_artifact_union_includes_all_variants() -> None:
     variants = set(get_args(Artifact.__value__))
-    assert variants == {CharTokenizer, Corpus, Dataset, Policy, Metrics}
+    assert variants == {CharTokenizer, Corpus, Dataset, Policy, TrainingMetrics}

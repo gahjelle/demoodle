@@ -62,6 +62,9 @@ def test_tokenizer_protocol_round_trip() -> None:
 
 
 class _DummyArchitecture:
+    vocab_size: int = 4
+    context_length: int = 4
+
     def init_state(self, rng: RNG) -> Policy:  # noqa: ARG002
         return Policy(model=nn.Linear(4, 4))
 
@@ -73,6 +76,18 @@ def test_architecture_protocol_dummy_satisfies() -> None:
     arch: ArchitectureProtocol = _DummyArchitecture()
     policy = arch.init_state(RNG(seed=0))
     assert isinstance(policy, Policy)
+
+
+def test_architecture_protocol_vocab_size_is_positive_int() -> None:
+    arch: ArchitectureProtocol = _DummyArchitecture()
+    assert isinstance(arch.vocab_size, int)
+    assert arch.vocab_size >= 1
+
+
+def test_architecture_protocol_context_length_is_positive_int() -> None:
+    arch: ArchitectureProtocol = _DummyArchitecture()
+    assert isinstance(arch.context_length, int)
+    assert arch.context_length >= 1
 
 
 # ---------------------------------------------------------------------------

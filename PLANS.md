@@ -140,7 +140,7 @@ Update future work items based on decisions made.
   (tested); top-k/top-p restrict the sampled set (tested).
 - **Depends on:** W3, W4, W8
 
-### W11. pretrain stage
+### ✅ W11. pretrain stage
 - **Goal:** train the bigram for real and record it.
 - **Build:** stage `(dataset, <arch/config>) -> (base_policy, metrics)`; a real
   gradient-descent loop; capture a real loss curve into `TrainingMetrics`.

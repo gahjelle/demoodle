@@ -27,7 +27,7 @@ active = "char"
 [tokenizer.bpe]
 vocab_size = 256
 
-[training]
+[training.pretrain]
 learning_rate = 1e-3
 batch_size = 32
 n_steps = 5_000

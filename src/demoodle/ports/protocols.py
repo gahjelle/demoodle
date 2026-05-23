@@ -27,6 +27,9 @@ class TokenizerProtocol(Protocol):
 class ArchitectureProtocol(Protocol):
     """Initialize model state and run forward passes."""
 
+    vocab_size: int
+    context_length: int
+
     def init_state(self, rng: RNG) -> Policy:
         """Return a freshly initialized Policy. Config is bound at construction."""
         ...

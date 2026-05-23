@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from demoodle.core.types import Corpus, Dataset, Metrics, Policy
+from demoodle.core.types import Corpus, Dataset, Policy, TrainingMetrics
 from demoodle.tokenizers.char import CharTokenizer
 
 if TYPE_CHECKING:
@@ -58,7 +58,7 @@ def _hash_artifact(artifact: Artifact) -> str:
             h.update(repr(sorted(char_to_id.items())).encode())
         case Corpus(text=text):
             h.update(text.encode())
-        case Metrics(losses=losses):
+        case TrainingMetrics(losses=losses):
             h.update(repr(losses).encode())
         case Dataset(tokens=tokens):
             h.update(

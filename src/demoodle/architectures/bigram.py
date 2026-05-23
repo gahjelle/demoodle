@@ -59,6 +59,7 @@ class BigramArchitecture:
     """V x V weight-matrix model. Stateless: no Policy held internally."""
 
     vocab_size: int
+    context_length: int = 1
 
     def init_state(self, rng: RNG) -> Policy:
         """Return a freshly initialised Policy. Pure function of rng."""

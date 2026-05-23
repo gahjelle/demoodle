@@ -8,7 +8,7 @@ import torch
 from torch import nn
 
 from demoodle.core.rng import RNG
-from demoodle.core.types import Artifact, Corpus, Dataset, Metrics, Policy
+from demoodle.core.types import Artifact, Corpus, Dataset, Policy, TrainingMetrics
 from demoodle.ports import Stage
 from demoodle.shell.persistence import _hash_artifact, cache_key, load, save
 from demoodle.tokenizers.char import CharTokenizer
@@ -53,10 +53,10 @@ def test_hash_corpus_differs_on_different_text() -> None:
 
 
 def test_hash_metrics_stable_and_sensitive() -> None:
-    m = Metrics(losses=[0.1, 0.2])
+    m = TrainingMetrics(losses=[0.1, 0.2])
     assert _hash_artifact(m) == _hash_artifact(m)
-    assert _hash_artifact(Metrics(losses=[0.1, 0.2])) != _hash_artifact(
-        Metrics(losses=[0.1, 0.3])
+    assert _hash_artifact(TrainingMetrics(losses=[0.1, 0.2])) != _hash_artifact(
+        TrainingMetrics(losses=[0.1, 0.3])
     )
 
 

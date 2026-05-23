@@ -41,7 +41,7 @@ class Policy:
 
 
 @dataclass(frozen=True)
-class Metrics:
+class TrainingMetrics:
     """Training history — per-step loss values."""
 
     losses: list[float]
@@ -50,4 +50,4 @@ class Metrics:
 # Artifact is the tagged union of all pipeline values.
 # BpeTokenizer (W18) joins when implemented.
 # RewardModel and PreferenceData will be added in Milestone 5 (W21).
-type Artifact = Corpus | CharTokenizer | Dataset | Policy | Metrics
+type Artifact = Corpus | CharTokenizer | Dataset | Policy | TrainingMetrics
