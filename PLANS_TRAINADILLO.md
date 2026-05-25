@@ -1,12 +1,12 @@
-# Gradingo — Work Items (Build Order)
+# Trainadillo — Work Items (Build Order)
 
-> Ordered backlog for building `demoodle.gradingo`, a minimal PyTorch clone on
-> NumPy. Each item is self-contained enough to drop into a prompt. Each lists
+> Ordered backlog for building `demoodle.trainadillo`, a minimal PyTorch clone
+> on NumPy. Each item is self-contained enough to drop into a prompt. Each lists
 > **goal · build · done-when · depends-on**. Implement top to bottom.
 >
-> Gradingo knows nothing about demoodle — imports go one way only. All gradingo
-> code lives under `src/demoodle/gradingo/` but has zero imports from `demoodle.*`.
-> Tests live under `tests/gradingo/`.
+> Trainadillo knows nothing about demoodle — imports go one way only. All
+> trainadillo code lives under `src/demoodle/trainadillo/` but has zero imports
+> from `demoodle.*`. Tests live under `tests/trainadillo/`.
 >
 > The general autograd strategy: every differentiable op creates a `GradFn` node
 > storing a backward closure. `Tensor.backward()` walks the graph in reverse
@@ -20,7 +20,7 @@
 ### G1. Tensor class & dtype constants
 
 - **Goal:** the core data type wrapping `numpy.ndarray`, without autograd.
-- **Build:** `gradingo/_tensor.py` — a `Tensor` class holding `_data: np.ndarray`.
+- **Build:** `trainadillo/_tensor.py` — a `Tensor` class holding `_data: np.ndarray`.
   Properties: `shape`, `ndim`, `dtype`, `data` (returns `_data`). Methods:
   `item()` (extract scalar), `tolist()` (convert to Python list), `size(dim=None)`
   (return shape or shape[dim]), `cpu()` (no-op, return self), `contiguous()` (no-op),
@@ -50,7 +50,7 @@
 ### G2. Creation functions
 
 - **Goal:** factory functions matching the `torch.*` creation API.
-- **Build:** `gradingo/_creation.py` — functions that return `Tensor` objects:
+- **Build:** `trainadillo/_creation.py` — functions that return `Tensor` objects:
   `tensor(data, *, dtype=None)` (convert Python data + optional dtype into a
   Tensor), `zeros(*shape)`, `ones(*shape)`, `zeros_like(t)`, `full_like(t, value)`,
   `arange(n)`, `stack(tensors, dim=0)`, `equal(a, b)` (element-wise comparison,
@@ -69,7 +69,7 @@
 
 - **Goal:** reproducible random number generation matching the `torch.Generator`
   interface.
-- **Build:** `gradingo/_rng.py` — a `Generator` class wrapping
+- **Build:** `trainadillo/_rng.py` — a `Generator` class wrapping
   `numpy.random.Generator` (backed by `PCG64`). Method: `manual_seed(seed)` —
   (re)initializes the internal numpy generator with the given seed. Also a
   module-level `_default_generator` and a `manual_seed(seed)` function that
@@ -81,7 +81,7 @@
 ### G4. Random creation functions
 
 - **Goal:** random tensor factories that accept an optional `generator` parameter.
-- **Build:** add to `gradingo/_creation.py` (or a separate `_random.py`):
+- **Build:** add to `trainadillo/_creation.py` (or a separate `_random.py`):
   `rand(*shape, generator=None)` (uniform [0,1)),
   `randint(low, high, size, *, generator=None)` (random integers, note: PyTorch's
   `randint` takes `size` as a tuple, not `*args`).
@@ -102,7 +102,7 @@
 ### G5. Reduction & sorting ops
 
 - **Goal:** `topk`, `sort`, `argmax` on Tensors.
-- **Build:** in `gradingo/_ops.py`:
+- **Build:** in `trainadillo/_ops.py`:
   `topk(tensor, k, dim=-1)` returns `(values, indices)` as a pair of Tensors
   (use `np.argpartition` + `np.argsort` for efficiency, or just `np.argsort` for
   simplicity since tensors are small).
@@ -115,7 +115,7 @@
 ### G6. Softmax, cumsum, multinomial
 
 - **Goal:** the probability-distribution operations used in sampling.
-- **Build:** in `gradingo/_ops.py`:
+- **Build:** in `trainadillo/_ops.py`:
   `softmax(tensor, dim=-1)` — the numerically stable version
   (`exp(x - max(x)) / sum(exp(x - max(x)))`). This is the standalone function
   form used during inference — *not* the differentiable version needed for
@@ -133,7 +133,7 @@
 ### G7. Masking ops & scatter
 
 - **Goal:** `masked_fill` and `scatter_` used in top-k/top-p filtering.
-- **Build:** in `gradingo/_ops.py`:
+- **Build:** in `trainadillo/_ops.py`:
   `Tensor.masked_fill(mask, value)` — return a new Tensor where positions where
   `mask` is True are replaced with `value`. (Note: PyTorch's `masked_fill` is
   in-place with an underscore variant, but the codebase uses the non-in-place form
@@ -149,7 +149,7 @@
   `torch.zeros_like(scaled).scatter_(0, sorted_indices, sorted_logits)`.
 - **Done when:** `masked_fill` replaces correct positions; `scatter_` places values
   at the right indices; the full `_sample()` function from bigram.py works when
-  using gradingo tensors (test with a known logit vector).
+  using trainadillo tensors (test with a known logit vector).
 - **Depends on:** G1, G2
 
 ---
@@ -159,7 +159,7 @@
 ### G8. Computation graph & backward pass
 
 - **Goal:** the autograd core — build a computation graph and walk it backward.
-- **Build:** `gradingo/_autograd.py`:
+- **Build:** `trainadillo/_autograd.py`:
   A `GradFn` base class (or protocol) with an abstract `backward(grad_output)`
   method that returns a list of `(Tensor, np.ndarray)` pairs (each input tensor
   paired with its gradient contribution).
@@ -188,7 +188,7 @@
 ### G9. Gradient checking utility
 
 - **Goal:** a reusable tool for validating backward implementations.
-- **Build:** `gradingo/_grad_check.py`:
+- **Build:** `trainadillo/_grad_check.py`:
   `gradcheck(fn, inputs, eps=1e-5, atol=1e-4, rtol=1e-3)` — for each input
   with `requires_grad=True`, compute the Jacobian numerically (central finite
   differences: `(f(x+eps) - f(x-eps)) / 2eps`) and analytically (via backward),
@@ -250,10 +250,10 @@
 
 - **Goal:** `nn.Module` and `nn.Parameter` matching the PyTorch interface used by
   demoodle.
-- **Build:** `gradingo/nn/_parameter.py`: `Parameter` is a `Tensor` (or thin
+- **Build:** `trainadillo/nn/_parameter.py`: `Parameter` is a `Tensor` (or thin
   wrapper) with `requires_grad=True` by default. It must be recognizable by
   `Module.__setattr__` for automatic registration.
-  `gradingo/nn/_module.py`: `Module` base class. Key mechanics:
+  `trainadillo/nn/_module.py`: `Module` base class. Key mechanics:
   - `__init__` must initialize `_parameters` and `_modules` dicts **before** the
     `__setattr__` intercept is active. Use `object.__setattr__(self, '_parameters', {})`
     and `object.__setattr__(self, '_modules', {})` in `Module.__init__()` to
@@ -273,13 +273,13 @@
 - **Done when:** a simple module with two Parameters can be constructed; `parameters()`
   yields both; `state_dict()` round-trips through `load_state_dict()`;
   `named_parameters()` produces correct dotted paths for nested modules; the
-  existing `BigramModel` class definition works with `from demoodle.gradingo import nn`.
+  existing `BigramModel` class definition works with `from demoodle.trainadillo import nn`.
 - **Depends on:** G1, G8
 
 ### G13. nn.Linear
 
 - **Goal:** dense layer used extensively in tests and needed for MLP/transformer.
-- **Build:** `gradingo/nn/_linear.py`: `Linear(in_features, out_features, bias=True)`.
+- **Build:** `trainadillo/nn/_linear.py`: `Linear(in_features, out_features, bias=True)`.
   Holds `weight` Parameter of shape `(out_features, in_features)` and optional
   `bias` Parameter of shape `(out_features,)`. Forward: `x @ weight.T + bias`.
   Initialization: Kaiming uniform (same as PyTorch default) — or simpler: uniform
@@ -298,7 +298,7 @@
 ### G14. nn.init (parameter initialization)
 
 - **Goal:** parameter initialization functions.
-- **Build:** `gradingo/nn/init.py`:
+- **Build:** `trainadillo/nn/init.py`:
   `normal_(tensor, mean=0.0, std=1.0, *, generator=None)` — fills tensor in-place
   with values from a normal distribution using the given generator. Returns the
   tensor. This is used by `BigramArchitecture.init_state()` to initialize the
@@ -310,7 +310,7 @@
 ### G15. F.cross_entropy & differentiable softmax
 
 - **Goal:** the training loss function — the hardest autograd op in the bigram path.
-- **Build:** `gradingo/nn/functional.py`:
+- **Build:** `trainadillo/nn/functional.py`:
   `cross_entropy(input, target)` — takes logits of shape `(N, C)` or `(C,)` and
   integer targets of shape `(N,)` or scalar. Computes `log_softmax(input)` then
   negative log-likelihood at the target indices. Returns a scalar loss Tensor.
@@ -329,7 +329,7 @@
 ### G16. Adam optimizer
 
 - **Goal:** the optimizer used in the training loop.
-- **Build:** `gradingo/optim/_adam.py`: `Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-8)`.
+- **Build:** `trainadillo/optim/_adam.py`: `Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-8)`.
   `params` is an iterable of Parameters (from `model.parameters()`).
   Methods:
   - `zero_grad()` — set `.grad` to None (or zeros) on all parameters.
@@ -355,7 +355,7 @@
 ### G17. Serialization (save / load)
 
 - **Goal:** persist and reload trained models.
-- **Build:** `gradingo/_serialization.py`:
+- **Build:** `trainadillo/_serialization.py`:
   `save(obj, path)` — serialize `obj` to `path` using `pickle`. Add
   `Tensor.__reduce__` (or `__getstate__`/`__setstate__`) so that only the numpy
   array and `requires_grad` flag are pickled — not the computation graph (`_grad_fn`,
@@ -364,7 +364,7 @@
   Accept the `weights_only` parameter for API compatibility but do not enforce it
   (it is a PyTorch security feature for untrusted data).
   **Note on format:** this uses Python's pickle, not PyTorch's internal format.
-  Files saved by gradingo cannot be loaded by `torch.load` and vice versa. The
+  Files saved by trainadillo cannot be loaded by `torch.load` and vice versa. The
   demoodle artifact cache (persistence.py) will need its existing cached `.pt`
   files cleared after migration in G20. Consider whether to keep the `.pt`
   extension (less churn in persistence.py) or change it (clearer that the format
@@ -376,24 +376,24 @@
 
 ### G18. Package wiring (__init__.py files)
 
-- **Goal:** make `import demoodle.gradingo as torch` work with the full public API.
+- **Goal:** make `import demoodle.trainadillo as torch` work with the full public API.
 - **Build:** write `__init__.py` files that re-export everything at the right level:
-  `gradingo/__init__.py` exports: `Tensor`, creation functions (`zeros`, `ones`,
+  `trainadillo/__init__.py` exports: `Tensor`, creation functions (`zeros`, `ones`,
   `tensor`, `arange`, `randint`, `stack`, `rand`, `full_like`, `zeros_like`,
   `equal`), ops (`topk`, `sort`, `softmax`, `cumsum`, `multinomial`), dtype
   constants (`long`, `uint8`, `float32`), `Generator`, `manual_seed`, `no_grad`,
   `save`, `load`, and the `nn` and `optim` subpackages.
-  `gradingo/nn/__init__.py` exports: `Module`, `Parameter`, `Linear`, and the
+  `trainadillo/nn/__init__.py` exports: `Module`, `Parameter`, `Linear`, and the
   `functional` and `init` submodules (so `nn.functional` and `nn.init` work as
   attribute access).
-  `gradingo/optim/__init__.py` exports: `Adam`.
+  `trainadillo/optim/__init__.py` exports: `Adam`.
   Verify that these import patterns all work:
-  - `import demoodle.gradingo as torch; torch.zeros(3)`
-  - `from demoodle.gradingo import nn; nn.Module`
-  - `import demoodle.gradingo as torch; torch.nn.functional.cross_entropy`
-  - `from demoodle.gradingo import nn; import demoodle.gradingo.nn.functional as F`
+  - `import demoodle.trainadillo as torch; torch.zeros(3)`
+  - `from demoodle.trainadillo import nn; nn.Module`
+  - `import demoodle.trainadillo as torch; torch.nn.functional.cross_entropy`
+  - `from demoodle.trainadillo import nn; import demoodle.trainadillo.nn.functional as F`
 - **Done when:** all four import patterns resolve correctly; no circular imports;
-  `dir(gradingo)` shows the expected public API.
+  `dir(trainadillo)` shows the expected public API.
 - **Depends on:** G1–G17
 
 ---
@@ -402,11 +402,11 @@
 
 ### G19. Bigram integration test
 
-- **Goal:** prove gradingo can train the bigram model end-to-end without any changes
+- **Goal:** prove trainadillo can train the bigram model end-to-end without any changes
   to model or training code (only import lines change).
-- **Build:** a standalone integration test under `tests/gradingo/` that:
+- **Build:** a standalone integration test under `tests/trainadillo/` that:
   1. Copies the `BigramModel` class and `_sample()` function verbatim (changing
-     only `import torch` to `import demoodle.gradingo as torch`).
+     only `import torch` to `import demoodle.trainadillo as torch`).
   2. Creates a small synthetic corpus (e.g. 100 repeated "abc\n" strings).
   3. Encodes it to a token tensor.
   4. Runs the training loop (Adam, cross_entropy, backward, step) for 200 steps.
@@ -414,21 +414,21 @@
   6. Runs `_sample()` and asserts it returns a valid token id.
   7. Tests save/load round-trip of the trained model.
   8. Tests that the full `_sample()` code path works (temperature, top-k, top-p).
-  Do **not** import from demoodle in this test — keep gradingo self-contained.
+  Do **not** import from demoodle in this test — keep trainadillo self-contained.
   Copy the code that is needed.
 - **Done when:** the integration test passes; loss decreases; sampling works;
-  save/load round-trips. This proves gradingo is a sufficient PyTorch replacement
+  save/load round-trips. This proves trainadillo is a sufficient PyTorch replacement
   for the current codebase.
 - **Depends on:** G18
 
 ### G20. Migrate demoodle imports
 
-- **Goal:** remove PyTorch as a dependency; use gradingo everywhere.
+- **Goal:** remove PyTorch as a dependency; use trainadillo everywhere.
 - **Build:** in every file that currently has `import torch` or `from torch import`:
-  replace with the gradingo equivalent. Files to update:
-  - `src/demoodle/core/types.py` — type annotations use `gradingo.Tensor`,
-    `gradingo.nn.Module`
-  - `src/demoodle/core/rng.py` — `gradingo.Generator` instead of `torch.Generator`
+  replace with the trainadillo equivalent. Files to update:
+  - `src/demoodle/core/types.py` — type annotations use `trainadillo.Tensor`,
+    `trainadillo.nn.Module`
+  - `src/demoodle/core/rng.py` — `trainadillo.Generator` instead of `torch.Generator`
   - `src/demoodle/architectures/bigram.py` — model + sampling
   - `src/demoodle/training/stages.py` — training loop
   - `src/demoodle/shell/persistence.py` — save/load/hashing
@@ -439,9 +439,9 @@
   (it may already be a transitive dependency).
   **Cache invalidation:** delete all cached `.pt` files under the cache directory.
   The serialization format changes from torch's pickle protocol to plain pickle —
-  old caches are unloadable. Update ADR-0004 to reference `gradingo.nn.Module`
+  old caches are unloadable. Update ADR-0004 to reference `trainadillo.nn.Module`
   instead of `torch.nn.Module`. Update CONTEXT.md glossary entries for Policy,
-  Artifact Cache, and Output to reference gradingo types.
+  Artifact Cache, and Output to reference trainadillo types.
 - **Done when:** `uv run pytest` passes; `uv run demoodle train` trains and shows
   decreasing loss; `uv run demoodle call` generates plausible names; `torch` is not
   importable (not installed) and everything still works; `uv run ruff check .`
@@ -458,7 +458,7 @@
 ### G21. nn.Embedding
 
 - **Goal:** learnable embedding lookup table.
-- **Build:** `gradingo/nn/_embedding.py`: `Embedding(num_embeddings, embedding_dim)`.
+- **Build:** `trainadillo/nn/_embedding.py`: `Embedding(num_embeddings, embedding_dim)`.
   Holds a `weight` Parameter of shape `(num_embeddings, embedding_dim)`.
   Forward: `self.weight[input]` — indexes into the weight matrix (uses the
   differentiable indexing from G11, which already handles batched integer indices).
@@ -472,7 +472,7 @@
 ### G22. Activation functions (ReLU, GELU)
 
 - **Goal:** nonlinearities for MLP hidden layers.
-- **Build:** in `gradingo/nn/functional.py`:
+- **Build:** in `trainadillo/nn/functional.py`:
   `relu(input)` — `max(0, input)`. Backward: `grad * (input > 0)`.
   `gelu(input)` — the Gaussian Error Linear Unit. Use the approximation:
   `0.5 * x * (1 + tanh(sqrt(2/pi) * (x + 0.044715 * x^3)))`.
@@ -521,7 +521,7 @@
 ### G25. nn.LayerNorm
 
 - **Goal:** layer normalization for transformer blocks.
-- **Build:** `gradingo/nn/_layernorm.py`:
+- **Build:** `trainadillo/nn/_layernorm.py`:
   `LayerNorm(normalized_shape, eps=1e-5)`. Holds learnable `weight` and `bias`
   Parameters of shape `normalized_shape`.
   Forward: normalize the last `len(normalized_shape)` dimensions to zero mean and
@@ -541,7 +541,7 @@
 ### G26. nn.Dropout
 
 - **Goal:** regularization via random zeroing during training.
-- **Build:** `gradingo/nn/_dropout.py`: `Dropout(p=0.5)`.
+- **Build:** `trainadillo/nn/_dropout.py`: `Dropout(p=0.5)`.
   Forward (training mode): generate a random mask where each element is 0 with
   probability `p` and 1 otherwise; multiply input by mask and scale by `1/(1-p)`
   (inverted dropout).
@@ -557,7 +557,7 @@
 ### G27. nn.Sequential
 
 - **Goal:** ordered container of modules.
-- **Build:** `gradingo/nn/_sequential.py`: `Sequential(*modules)`.
+- **Build:** `trainadillo/nn/_sequential.py`: `Sequential(*modules)`.
   Forward: pass input through each module in order.
   Inherits `parameters()`, `state_dict()`, etc. from `Module` — child modules
   are registered via `__setattr__` with string-integer keys ("0", "1", ...).
@@ -581,7 +581,7 @@
   `masked_fill` from G7 only handles the inference path.)
   These are the primitives. The actual multi-head attention (Q/K/V projections,
   scaled dot-product, concatenation) will be built in the transformer architecture
-  code in demoodle, not in gradingo — gradingo just provides the building blocks.
+  code in demoodle, not in trainadillo — trainadillo just provides the building blocks.
 - **Done when:** `(B, N, D) @ (B, D, M)` works in forward and backward; gradient
   check passes for batched matmul; masked_fill backward zeros out gradients at
   masked positions.
@@ -597,7 +597,7 @@
 ### G29. Log, exp, sigmoid, and KL divergence
 
 - **Goal:** differentiable transcendental functions needed by DPO/PPO losses.
-- **Build:** in `gradingo/_ops.py` or `nn/functional.py`:
+- **Build:** in `trainadillo/_ops.py` or `nn/functional.py`:
   `Tensor.log()` — natural logarithm. Backward: `grad / input`.
   `Tensor.exp()` — exponential. Backward: `grad * exp(input)`.
   `torch.sigmoid(input)` — `1 / (1 + exp(-x))`. Backward:
