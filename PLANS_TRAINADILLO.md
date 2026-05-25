@@ -63,7 +63,7 @@ When implementing any T-item, take the time to:
   comparison ops produce boolean Tensors that work as masks.
 - **Depends on:** —
 
-### T2. Creation functions
+### ✅ T2. Creation functions
 
 - **Goal:** factory functions matching the `torch.*` creation API.
 - **Build:** `trainadillo/_creation.py` — functions that return `Tensor` objects:
