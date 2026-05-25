@@ -11,6 +11,22 @@ Update future work items based on decisions made.
 
 ---
 
+## Educational Intent
+
+**Demoodle is a learning project.** The goal is to understand how LLM systems are
+built by implementing their core ideas from scratch, in a way that makes the *why*
+visible.
+
+When implementing any W-item, take the time to:
+- Explain the **why** behind each design decision, not just the what
+- Connect the concept back to how real LLM systems — HuggingFace, MLflow, JAX,
+  Airflow, or whatever is most directly relevant — handle the same problem
+- Highlight non-obvious invariants or subtleties
+- After implementing, write an explanatory note to
+  `docs/demoodle/<00N>-<short-name>.md` that captures the concepts introduced
+
+---
+
 ## Milestone 0 — Foundations (pure core types & seams)
 
 ### ✅ W1. Project skeleton & tooling

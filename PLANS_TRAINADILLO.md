@@ -27,7 +27,7 @@ When implementing any T-item, take the time to:
 - Highlight non-obvious invariants or subtleties (e.g. why `__bool__` is absent,
   why integer indexing returns a 0-D Tensor rather than a scalar)
 - After implementing, write an explanatory note to
-  `docs/trainadillo/T<N>-<short-name>.md` that captures the concepts introduced
+  `docs/trainadillo/<00N>-<short-name>.md` that captures the concepts introduced
 
 ---
 
