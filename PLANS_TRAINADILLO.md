@@ -1,11 +1,11 @@
 # Trainadillo — Work Items (Build Order)
 
-> Ordered backlog for building `demoodle.trainadillo`, a minimal PyTorch clone
+> Ordered backlog for building `trainadillo`, a minimal PyTorch clone
 > on NumPy. Each item is self-contained enough to drop into a prompt. Each lists
 > **goal · build · done-when · depends-on**. Implement top to bottom.
 >
 > Trainadillo knows nothing about demoodle — imports go one way only. All
-> trainadillo code lives under `src/demoodle/trainadillo/` but has zero imports
+> trainadillo code lives under `src/trainadillo/` but has zero imports
 > from `demoodle.*`. Tests live under `tests/trainadillo/`.
 >
 > The general autograd strategy: every differentiable op creates a `GradFn` node
@@ -15,9 +15,25 @@
 
 ---
 
-## Milestone G0 — Tensor Foundations
+## Educational Intent
 
-### G1. Tensor class & dtype constants
+**Trainadillo is a learning project.** The goal is to understand how PyTorch works
+under the hood by building its core ideas from scratch on NumPy.
+
+When implementing any T-item, take the time to:
+- Explain the **why** behind each design decision, not just the what
+- Connect the concept back to how real PyTorch implements it (and where trainadillo
+  simplifies — no GPU, no C extensions, no autograd tape in C++)
+- Highlight non-obvious invariants or subtleties (e.g. why `__bool__` is absent,
+  why integer indexing returns a 0-D Tensor rather than a scalar)
+- After implementing, write an explanatory note to
+  `docs/trainadillo/T<N>-<short-name>.md` that captures the concepts introduced
+
+---
+
+## Milestone T0 — Tensor Foundations
+
+### ✅ T1. Tensor class & dtype constants
 
 - **Goal:** the core data type wrapping `numpy.ndarray`, without autograd.
 - **Build:** `trainadillo/_tensor.py` — a `Tensor` class holding `_data: np.ndarray`.
@@ -47,7 +63,7 @@
   comparison ops produce boolean Tensors that work as masks.
 - **Depends on:** —
 
-### G2. Creation functions
+### T2. Creation functions
 
 - **Goal:** factory functions matching the `torch.*` creation API.
 - **Build:** `trainadillo/_creation.py` — functions that return `Tensor` objects:
@@ -65,7 +81,7 @@
   otherwise; `tensor(data) + python_int` works.
 - **Depends on:** G1
 
-### G3. Generator & RNG
+### T3. Generator & RNG
 
 - **Goal:** reproducible random number generation matching the `torch.Generator`
   interface.
@@ -78,7 +94,7 @@
   different seeds diverge; `manual_seed` at module level works.
 - **Depends on:** —
 
-### G4. Random creation functions
+### T4. Random creation functions
 
 - **Goal:** random tensor factories that accept an optional `generator` parameter.
 - **Build:** add to `trainadillo/_creation.py` (or a separate `_random.py`):
@@ -93,13 +109,13 @@
 
 ---
 
-## Milestone G1 — Tensor Operations (Non-Differentiable)
+## Milestone T1 — Tensor Operations (Non-Differentiable)
 
 > These ops are used in sampling (`_sample()` in `bigram.py`) and in data
 > preprocessing. They are never in the gradient path, so they do not need
 > backward implementations. Build them as pure numpy wrappers.
 
-### G5. Reduction & sorting ops
+### T5. Reduction & sorting ops
 
 - **Goal:** `topk`, `sort`, `argmax` on Tensors.
 - **Build:** in `trainadillo/_ops.py`:
@@ -112,7 +128,7 @@
   `descending=True` works; `argmax` returns the index of the maximum.
 - **Depends on:** G1
 
-### G6. Softmax, cumsum, multinomial
+### T6. Softmax, cumsum, multinomial
 
 - **Goal:** the probability-distribution operations used in sampling.
 - **Build:** in `trainadillo/_ops.py`:
@@ -130,7 +146,7 @@
   reproducible.
 - **Depends on:** G1, G3
 
-### G7. Masking ops & scatter
+### T7. Masking ops & scatter
 
 - **Goal:** `masked_fill` and `scatter_` used in top-k/top-p filtering.
 - **Build:** in `trainadillo/_ops.py`:
@@ -154,9 +170,9 @@
 
 ---
 
-## Milestone G2 — Autograd Engine
+## Milestone T2 — Autograd Engine
 
-### G8. Computation graph & backward pass
+### T8. Computation graph & backward pass
 
 - **Goal:** the autograd core — build a computation graph and walk it backward.
 - **Build:** `trainadillo/_autograd.py`:
@@ -185,7 +201,7 @@
   accumulate, not overwrite).
 - **Depends on:** G1
 
-### G9. Gradient checking utility
+### T9. Gradient checking utility
 
 - **Goal:** a reusable tool for validating backward implementations.
 - **Build:** `trainadillo/_grad_check.py`:
@@ -201,7 +217,7 @@
   instead of `grad * 2` for a `x * 2` op) and passes a correct one.
 - **Depends on:** G8
 
-### G10. Differentiable arithmetic ops
+### T10. Differentiable arithmetic ops
 
 - **Goal:** make `+`, `-`, `*`, `/`, `**`, `@` (matmul) track gradients.
 - **Build:** upgrade the arithmetic dunders from G1 to create `GradFn` nodes when
@@ -223,7 +239,7 @@
   including broadcast cases.
 - **Depends on:** G8, G9
 
-### G11. Differentiable indexing
+### T11. Differentiable indexing
 
 - **Goal:** make `weight[x]` (parameter lookup by integer index) differentiable.
   This is the critical op for the bigram model.
@@ -244,9 +260,9 @@
 
 ---
 
-## Milestone G3 — Module System
+## Milestone T3 — Module System
 
-### G12. Parameter & Module
+### T12. Parameter & Module
 
 - **Goal:** `nn.Module` and `nn.Parameter` matching the PyTorch interface used by
   demoodle.
@@ -273,10 +289,10 @@
 - **Done when:** a simple module with two Parameters can be constructed; `parameters()`
   yields both; `state_dict()` round-trips through `load_state_dict()`;
   `named_parameters()` produces correct dotted paths for nested modules; the
-  existing `BigramModel` class definition works with `from demoodle.trainadillo import nn`.
+  existing `BigramModel` class definition works with `from trainadillo import nn`.
 - **Depends on:** G1, G8
 
-### G13. nn.Linear
+### T13. nn.Linear
 
 - **Goal:** dense layer used extensively in tests and needed for MLP/transformer.
 - **Build:** `trainadillo/nn/_linear.py`: `Linear(in_features, out_features, bias=True)`.
@@ -293,9 +309,9 @@
 
 ---
 
-## Milestone G4 — Loss, Optimizer, Init
+## Milestone T4 — Loss, Optimizer, Init
 
-### G14. nn.init (parameter initialization)
+### T14. nn.init (parameter initialization)
 
 - **Goal:** parameter initialization functions.
 - **Build:** `trainadillo/nn/init.py`:
@@ -307,7 +323,7 @@
   generator seed produces same initialization; the tensor is modified in-place.
 - **Depends on:** G1, G3
 
-### G15. F.cross_entropy & differentiable softmax
+### T15. F.cross_entropy & differentiable softmax
 
 - **Goal:** the training loss function — the hardest autograd op in the bigram path.
 - **Build:** `trainadillo/nn/functional.py`:
@@ -326,7 +342,7 @@
   (G9) passes for both `cross_entropy` and `softmax`.
 - **Depends on:** G8, G9, G11
 
-### G16. Adam optimizer
+### T16. Adam optimizer
 
 - **Goal:** the optimizer used in the training loop.
 - **Build:** `trainadillo/optim/_adam.py`: `Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-8)`.
@@ -350,9 +366,9 @@
 
 ---
 
-## Milestone G5 — Serialization & Wiring
+## Milestone T5 — Serialization & Wiring
 
-### G17. Serialization (save / load)
+### T17. Serialization (save / load)
 
 - **Goal:** persist and reload trained models.
 - **Build:** `trainadillo/_serialization.py`:
@@ -374,9 +390,9 @@
   are leaves with `_grad_fn=None`).
 - **Depends on:** G1, G12
 
-### G18. Package wiring (__init__.py files)
+### T18. Package wiring (__init__.py files)
 
-- **Goal:** make `import demoodle.trainadillo as torch` work with the full public API.
+- **Goal:** make `import trainadillo as torch` work with the full public API.
 - **Build:** write `__init__.py` files that re-export everything at the right level:
   `trainadillo/__init__.py` exports: `Tensor`, creation functions (`zeros`, `ones`,
   `tensor`, `arange`, `randint`, `stack`, `rand`, `full_like`, `zeros_like`,
@@ -388,25 +404,25 @@
   attribute access).
   `trainadillo/optim/__init__.py` exports: `Adam`.
   Verify that these import patterns all work:
-  - `import demoodle.trainadillo as torch; torch.zeros(3)`
-  - `from demoodle.trainadillo import nn; nn.Module`
-  - `import demoodle.trainadillo as torch; torch.nn.functional.cross_entropy`
-  - `from demoodle.trainadillo import nn; import demoodle.trainadillo.nn.functional as F`
+  - `import trainadillo as torch; torch.zeros(3)`
+  - `from trainadillo import nn; nn.Module`
+  - `import trainadillo as torch; torch.nn.functional.cross_entropy`
+  - `from trainadillo import nn; import trainadillo.nn.functional as F`
 - **Done when:** all four import patterns resolve correctly; no circular imports;
   `dir(trainadillo)` shows the expected public API.
 - **Depends on:** G1–G17
 
 ---
 
-## Milestone G6 — Integration
+## Milestone T6 — Integration
 
-### G19. Bigram integration test
+### T19. Bigram integration test
 
 - **Goal:** prove trainadillo can train the bigram model end-to-end without any changes
   to model or training code (only import lines change).
 - **Build:** a standalone integration test under `tests/trainadillo/` that:
   1. Copies the `BigramModel` class and `_sample()` function verbatim (changing
-     only `import torch` to `import demoodle.trainadillo as torch`).
+     only `import torch` to `import trainadillo as torch`).
   2. Creates a small synthetic corpus (e.g. 100 repeated "abc\n" strings).
   3. Encodes it to a token tensor.
   4. Runs the training loop (Adam, cross_entropy, backward, step) for 200 steps.
@@ -421,7 +437,7 @@
   for the current codebase.
 - **Depends on:** G18
 
-### G20. Migrate demoodle imports
+### T20. Migrate demoodle imports
 
 - **Goal:** remove PyTorch as a dependency; use trainadillo everywhere.
 - **Build:** in every file that currently has `import torch` or `from torch import`:
@@ -450,12 +466,12 @@
 
 ---
 
-## Milestone G7 — MLP Architecture Support
+## Milestone T7 — MLP Architecture Support
 
 > These items add the ops needed for W13 (MLP architecture) from PLANS.md.
 > Build them when W13 is being implemented, or ahead of time for practice.
 
-### G21. nn.Embedding
+### T21. nn.Embedding
 
 - **Goal:** learnable embedding lookup table.
 - **Build:** `trainadillo/nn/_embedding.py`: `Embedding(num_embeddings, embedding_dim)`.
@@ -469,7 +485,7 @@
   check passes.
 - **Depends on:** G11, G12
 
-### G22. Activation functions (ReLU, GELU)
+### T22. Activation functions (ReLU, GELU)
 
 - **Goal:** nonlinearities for MLP hidden layers.
 - **Build:** in `trainadillo/nn/functional.py`:
@@ -484,7 +500,7 @@
   the Gaussian CDF-weighted identity; gradient check passes for both.
 - **Depends on:** G8, G9
 
-### G23. Sum & mean reductions
+### T23. Sum & mean reductions
 
 - **Goal:** differentiable reduction ops needed as building blocks.
 - **Build:** add `Tensor.sum(dim=None, keepdim=False)` and
@@ -498,12 +514,12 @@
 
 ---
 
-## Milestone G8 — Transformer Architecture Support
+## Milestone T8 — Transformer Architecture Support
 
 > These items add the ops needed for W16 (tiny transformer) from PLANS.md.
 > Build them when W16 is being implemented, or ahead of time for practice.
 
-### G24. Transpose & reshape in autograd
+### T24. Transpose & reshape in autograd
 
 - **Goal:** shape manipulation that preserves gradient flow.
 - **Build:** make `Tensor.view(*shape)`, `Tensor.reshape(*shape)`,
@@ -518,7 +534,7 @@
   gradient check passes.
 - **Depends on:** G8, G9
 
-### G25. nn.LayerNorm
+### T25. nn.LayerNorm
 
 - **Goal:** layer normalization for transformer blocks.
 - **Build:** `trainadillo/nn/_layernorm.py`:
@@ -538,7 +554,7 @@
   check passes; matches expected behavior on known inputs.
 - **Depends on:** G12, G23
 
-### G26. nn.Dropout
+### T26. nn.Dropout
 
 - **Goal:** regularization via random zeroing during training.
 - **Build:** `trainadillo/nn/_dropout.py`: `Dropout(p=0.5)`.
@@ -554,7 +570,7 @@
   gradient check passes.
 - **Depends on:** G8, G9, G12
 
-### G27. nn.Sequential
+### T27. nn.Sequential
 
 - **Goal:** ordered container of modules.
 - **Build:** `trainadillo/nn/_sequential.py`: `Sequential(*modules)`.
@@ -566,7 +582,7 @@
   from all children are accessible; backward flows through the chain.
 - **Depends on:** G12, G13, G22
 
-### G28. Batched matmul & attention primitives
+### T28. Batched matmul & attention primitives
 
 - **Goal:** the matrix operations needed for multi-head self-attention.
 - **Build:** ensure matmul (`@` operator from G10) handles batched inputs:
@@ -589,12 +605,12 @@
 
 ---
 
-## Milestone G9 — RLHF Support
+## Milestone T9 — RLHF Support
 
 > These items add ops needed for W22–W27 (SFT, DPO, PPO) from PLANS.md.
 > Build them when those work items are being implemented.
 
-### G29. Log, exp, sigmoid, and KL divergence
+### T29. Log, exp, sigmoid, and KL divergence
 
 - **Goal:** differentiable transcendental functions needed by DPO/PPO losses.
 - **Build:** in `trainadillo/_ops.py` or `nn/functional.py`:
@@ -611,7 +627,7 @@
   numerically equivalent to `log(softmax(x))` but stable for large values.
 - **Depends on:** G8, G9
 
-### G30. MSE loss & clamp
+### T30. MSE loss & clamp
 
 - **Goal:** loss function for reward model training; clamp for PPO.
 - **Build:**
