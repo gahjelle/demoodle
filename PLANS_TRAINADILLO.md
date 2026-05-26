@@ -86,7 +86,7 @@ When implementing any T-item, take the time to:
 - **Goal:** reproducible random number generation matching the `torch.Generator`
   interface.
 - **Build:** `trainadillo/_rng.py` — a `Generator` class wrapping
-  `numpy.random.Generator` (backed by `PCT64`). Method: `manual_seed(seed)` —
+  `numpy.random.Generator` (backed by `PCG64`). Method: `manual_seed(seed)` —
   (re)initializes the internal numpy generator with the given seed. Also a
   module-level `_default_generator` and a `manual_seed(seed)` function that
   seeds it. The `Generator` must be passable to creation functions in T4.
@@ -115,7 +115,7 @@ When implementing any T-item, take the time to:
 > preprocessing. They are never in the gradient path, so they do not need
 > backward implementations. Build them as pure numpy wrappers.
 
-### T5. Reduction & sorting ops
+### ✅ T5. Reduction & sorting ops
 
 - **Goal:** `topk`, `sort`, `argmax` on Tensors.
 - **Build:** in `trainadillo/_ops.py`:

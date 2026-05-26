@@ -92,7 +92,7 @@ class Tensor:
         """No-op: numpy arrays are always in C-contiguous memory."""
         return self
 
-    def view(self, *shape_or_dtype: int | type[np.generic]) -> Tensor:
+    def view(self, *shape_or_dtype: int | type[np.generic]) -> Self:
         """Reshape or reinterpret raw bytes.
 
         Called with ints: reshape (like numpy.reshape).
@@ -104,19 +104,28 @@ class Tensor:
             and isinstance(shape_or_dtype[0], type)
             and issubclass(shape_or_dtype[0], np.generic)
         ):
-            return Tensor(self._data.view(shape_or_dtype[0]))
+            return type(self)(self._data.view(shape_or_dtype[0]))
         shape = tuple(int(x) for x in shape_or_dtype)  # ty: ignore[invalid-argument-type]
-        return Tensor(self._data.reshape(shape))
+        return type(self)(self._data.reshape(shape))
 
-    def squeeze(self, dim: int | None = None) -> Tensor:
+    def squeeze(self, dim: int | None = None) -> Self:
         """Remove dimensions of size 1."""
         if dim is None:
-            return Tensor(self._data.squeeze())
-        return Tensor(np.squeeze(self._data, axis=dim))
+            return type(self)(self._data.squeeze())
+        return type(self)(np.squeeze(self._data, axis=dim))
 
-    def flatten(self) -> Tensor:
+    def flatten(self) -> Self:
         """Return a 1-D copy."""
-        return Tensor(self._data.flatten())
+        return type(self)(self._data.flatten())
+
+    def argmax(self, dim: int | None = None) -> Tensor:
+        """Return the index of the maximum value.
+
+        When dim is None, operates over the flattened tensor and returns a 0-D
+        Tensor. When dim is given, returns a Tensor with that dimension removed.
+        Matches torch.Tensor.argmax behaviour.
+        """
+        return Tensor(np.argmax(self._data, axis=dim))
 
     # ------------------------------------------------------------------
     # Indexing — always returns a Tensor, never a Python scalar
