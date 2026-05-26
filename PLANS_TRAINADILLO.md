@@ -81,7 +81,7 @@ When implementing any T-item, take the time to:
   otherwise; `tensor(data) + python_int` works.
 - **Depends on:** G1
 
-### T3. Generator & RNG
+### ✅ T3. Generator & RNG
 
 - **Goal:** reproducible random number generation matching the `torch.Generator`
   interface.

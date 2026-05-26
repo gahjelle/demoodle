@@ -1,6 +1,6 @@
 """The Tensor type: numpy array wrapper with PyTorch-compatible API."""
 
-from typing import Any
+from typing import Any, Self
 
 import numpy as np
 
@@ -84,11 +84,11 @@ class Tensor:
         s = Size(self._data.shape)
         return s if dim is None else s[dim]
 
-    def cpu(self) -> Tensor:
+    def cpu(self) -> Self:
         """No-op: trainadillo tensors are always on CPU."""
         return self
 
-    def contiguous(self) -> Tensor:
+    def contiguous(self) -> Self:
         """No-op: numpy arrays are always in C-contiguous memory."""
         return self
 

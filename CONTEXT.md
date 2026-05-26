@@ -45,6 +45,14 @@ An immutable value type (`core/rng.py`) wrapping a single integer seed. Split vi
 
 ---
 
+## trainadillo.Generator
+
+A mutable RNG object (`trainadillo/_rng.py`) wrapping numpy's PCG64 generator. Created via `Generator()` (OS entropy) or seeded via `.manual_seed(seed)`. Passed explicitly to random factories (`rand`, `randint`, `multinomial`). The module-level default (`trainadillo.manual_seed(seed)`) is `None` until seeded — calling random functions without seeding raises `RuntimeError`.
+
+Distinct from **RNG**: `RNG` is Demoodle's immutable JAX-style seed value; `Generator` is trainadillo's mutable PyTorch-compatible RNG state.
+
+---
+
 ## Protocol
 
 A structural interface (`ports/protocols.py`) defining a behavioral contract. Classes satisfy a protocol by implementing the required methods — no inheritance needed. Protocol names carry the `Protocol` suffix to avoid shadowing artifact types with the same name (e.g., `TokenizerProtocol` vs the `CharTokenizer`/`BpeTokenizer` artifacts).
