@@ -55,8 +55,8 @@ When implementing any T-item, take the time to:
   `__repr__` and `__len__`.
   Also define module-level dtype constants: `long = np.int64`, `uint8 = np.uint8`,
   `float32 = np.float32` (the default).
-  **Do not** add autograd fields yet — those come in G8 when the autograd engine
-  is built. Keep G1 focused on the numpy wrapper.
+  **Do not** add autograd fields yet — those come in T8 when the autograd engine
+  is built. Keep T1 focused on the numpy wrapper.
 - **Done when:** `Tensor` wraps arrays; `item()`, `tolist()`, `shape`, `view`,
   indexing, arithmetic all work; `tensor([1, 2, 3], dtype=long)` produces an int64
   Tensor; a test confirms `.view(uint8)` on a float32 Tensor returns raw bytes;
@@ -74,27 +74,27 @@ When implementing any T-item, take the time to:
   Each wraps the corresponding `np.*` call and returns a `Tensor`.
   **Note on tensor arithmetic with Python ints:** the codebase does
   `tokens[offsets + context_len]` where `offsets` is a Tensor and `context_len`
-  is a Python int. This works naturally since G1's `__add__` wraps numpy, which
+  is a Python int. This works naturally since T1's `__add__` wraps numpy, which
   handles int+array. Verify this case explicitly in tests.
 - **Done when:** all functions return `Tensor`; `stack` combines a list of 1-D
   Tensors into a 2-D Tensor; `equal` returns True for identical tensors and False
   otherwise; `tensor(data) + python_int` works.
-- **Depends on:** G1
+- **Depends on:** T1
 
 ### ✅ T3. Generator & RNG
 
 - **Goal:** reproducible random number generation matching the `torch.Generator`
   interface.
 - **Build:** `trainadillo/_rng.py` — a `Generator` class wrapping
-  `numpy.random.Generator` (backed by `PCG64`). Method: `manual_seed(seed)` —
+  `numpy.random.Generator` (backed by `PCT64`). Method: `manual_seed(seed)` —
   (re)initializes the internal numpy generator with the given seed. Also a
   module-level `_default_generator` and a `manual_seed(seed)` function that
-  seeds it. The `Generator` must be passable to creation functions in G4.
+  seeds it. The `Generator` must be passable to creation functions in T4.
 - **Done when:** two `Generator`s with the same seed produce identical sequences;
   different seeds diverge; `manual_seed` at module level works.
 - **Depends on:** —
 
-### T4. Random creation functions
+### ✅ T4. Random creation functions
 
 - **Goal:** random tensor factories that accept an optional `generator` parameter.
 - **Build:** add to `trainadillo/_creation.py` (or a separate `_random.py`):
@@ -105,7 +105,7 @@ When implementing any T-item, take the time to:
 - **Done when:** `randint(0, 10, (5,), generator=g)` returns a shape-(5,) int64
   Tensor; same generator seed produces same output; different seeds produce
   different output.
-- **Depends on:** G1, G3
+- **Depends on:** T1, T3
 
 ---
 
@@ -126,7 +126,7 @@ When implementing any T-item, take the time to:
   Also add `Tensor.argmax(dim=None)` as a method delegating to `np.argmax`.
 - **Done when:** `topk` returns the k largest values and their indices; `sort` with
   `descending=True` works; `argmax` returns the index of the maximum.
-- **Depends on:** G1
+- **Depends on:** T1
 
 ### T6. Softmax, cumsum, multinomial
 
@@ -135,7 +135,7 @@ When implementing any T-item, take the time to:
   `softmax(tensor, dim=-1)` — the numerically stable version
   (`exp(x - max(x)) / sum(exp(x - max(x)))`). This is the standalone function
   form used during inference — *not* the differentiable version needed for
-  training (that comes in G15).
+  training (that comes in T15).
   `cumsum(tensor, dim)` — cumulative sum along a dimension.
   `multinomial(probs, num_samples, *, generator=None)` — sample indices from a
   categorical distribution. Use the numpy generator's `choice` method with the
@@ -144,7 +144,7 @@ When implementing any T-item, take the time to:
   draws from the distribution (statistical test: over many draws, frequencies
   approximate the input probabilities); the `generator` parameter makes results
   reproducible.
-- **Depends on:** G1, G3
+- **Depends on:** T1, T3
 
 ### T7. Masking ops & scatter
 
@@ -166,7 +166,7 @@ When implementing any T-item, take the time to:
 - **Done when:** `masked_fill` replaces correct positions; `scatter_` places values
   at the right indices; the full `_sample()` function from bigram.py works when
   using trainadillo tensors (test with a known logit vector).
-- **Depends on:** G1, G2
+- **Depends on:** T1, T2
 
 ---
 
@@ -181,7 +181,7 @@ When implementing any T-item, take the time to:
   paired with its gradient contribution).
   Extend the `Tensor` class with autograd fields: `grad: Tensor | None = None`,
   `requires_grad: bool = False`, `_grad_fn: GradFn | None = None`,
-  `_is_leaf: bool = True`. These were not in G1 — add them now that the autograd
+  `_is_leaf: bool = True`. These were not in T1 — add them now that the autograd
   engine exists to use them.
   When `requires_grad` is True and `no_grad` mode is off, operations
   record a `_grad_fn` on the output tensor pointing back to the inputs.
@@ -199,7 +199,7 @@ When implementing any T-item, take the time to:
   `x.grad` equals 2. `no_grad` suppresses graph construction. Topological sort
   handles diamond-shaped graphs (a tensor used by two downstream ops — gradients
   accumulate, not overwrite).
-- **Depends on:** G1
+- **Depends on:** T1
 
 ### T9. Gradient checking utility
 
@@ -210,17 +210,17 @@ When implementing any T-item, take the time to:
   differences: `(f(x+eps) - f(x-eps)) / 2eps`) and analytically (via backward),
   assert they match within tolerance.
   This is a test utility, not part of the public API — but it is essential for
-  validating every differentiable op from G10 onward. Build it now so that every
+  validating every differentiable op from T10 onward. Build it now so that every
   subsequent "done when" clause can say "gradient check passes" and mean something
   concrete.
 - **Done when:** correctly catches an intentionally-wrong backward (e.g. `grad * 3`
   instead of `grad * 2` for a `x * 2` op) and passes a correct one.
-- **Depends on:** G8
+- **Depends on:** T8
 
 ### T10. Differentiable arithmetic ops
 
 - **Goal:** make `+`, `-`, `*`, `/`, `**`, `@` (matmul) track gradients.
-- **Build:** upgrade the arithmetic dunders from G1 to create `GradFn` nodes when
+- **Build:** upgrade the arithmetic dunders from T1 to create `GradFn` nodes when
   either operand has `requires_grad=True` (and `no_grad` is off). Each op needs a
   backward closure:
   - **Add:** `d/da = grad`, `d/db = grad` (broadcast-aware: sum over broadcast dims)
@@ -235,9 +235,9 @@ When implementing any T-item, take the time to:
   Broadcasting: when input was broadcast during forward, the backward must sum
   over the broadcast dimensions to match the original shape. Implement a helper
   `_unbroadcast(grad, target_shape)` that does this.
-- **Done when:** gradient check (G9) passes for each op with various shapes
+- **Done when:** gradient check (T9) passes for each op with various shapes
   including broadcast cases.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
 
 ### T11. Differentiable indexing
 
@@ -253,10 +253,10 @@ When implementing any T-item, take the time to:
   Support both single-integer indexing (`weight[3]`) and batch indexing
   (`weight[tensor_of_ints]`). Slice indexing (`tensor[2:5]`) can remain
   non-differentiable for now (not used in training path).
-- **Done when:** gradient check (G9) passes: index into a parameter with various
+- **Done when:** gradient check (T9) passes: index into a parameter with various
   indices, backward, compare with finite differences. The bigram forward pass
   `self.weight[x]` is differentiable.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
 
 ---
 
@@ -290,7 +290,7 @@ When implementing any T-item, take the time to:
   yields both; `state_dict()` round-trips through `load_state_dict()`;
   `named_parameters()` produces correct dotted paths for nested modules; the
   existing `BigramModel` class definition works with `from trainadillo import nn`.
-- **Depends on:** G1, G8
+- **Depends on:** T1, T8
 
 ### T13. nn.Linear
 
@@ -300,12 +300,12 @@ When implementing any T-item, take the time to:
   `bias` Parameter of shape `(out_features,)`. Forward: `x @ weight.T + bias`.
   Initialization: Kaiming uniform (same as PyTorch default) — or simpler: uniform
   in `[-1/sqrt(in_features), 1/sqrt(in_features)]`.
-  The forward pass uses the differentiable matmul and add ops from G10, so backward
+  The forward pass uses the differentiable matmul and add ops from T10, so backward
   comes for free.
 - **Done when:** `Linear(4, 3)(x)` produces output of shape `(*, 3)`;
   `model.parameters()` includes weight and bias; backward through Linear works
   (gradient check). Tests that create `Policy(model=nn.Linear(4, 4))` work.
-- **Depends on:** G10, G12
+- **Depends on:** T10, T12
 
 ---
 
@@ -321,7 +321,7 @@ When implementing any T-item, take the time to:
   weight matrix.
 - **Done when:** `nn.init.normal_` fills a tensor with seeded random values; same
   generator seed produces same initialization; the tensor is modified in-place.
-- **Depends on:** G1, G3
+- **Depends on:** T1, T3
 
 ### T15. F.cross_entropy & differentiable softmax
 
@@ -335,12 +335,12 @@ When implementing any T-item, take the time to:
   for mean reduction). Implement as a single fused `GradFn` for numerical stability
   (log-sum-exp trick) rather than composing softmax, log, nll.
   Also add `softmax(input, dim)` as a differentiable function in functional.py
-  (will be needed for attention in G28). Backward of softmax:
+  (will be needed for attention in T28). Backward of softmax:
   `s = softmax(input)`, `d_input = s * (grad - sum(grad * s, dim, keepdim=True))`.
 - **Done when:** `F.cross_entropy(logits, targets)` returns a scalar; calling
   `.backward()` on it populates gradients on the logits tensor; gradient check
-  (G9) passes for both `cross_entropy` and `softmax`.
-- **Depends on:** G8, G9, G11
+  (T9) passes for both `cross_entropy` and `softmax`.
+- **Depends on:** T8, T9, T11
 
 ### T16. Adam optimizer
 
@@ -362,7 +362,7 @@ When implementing any T-item, take the time to:
   `(x - 3)^2`) converges `x` toward 3; the optimizer's `zero_grad()` clears
   gradients; the training loop pattern
   `optimizer.zero_grad(); loss.backward(); optimizer.step()` works end-to-end.
-- **Depends on:** G12 (Parameter), G10 (arithmetic for test loss)
+- **Depends on:** T12 (Parameter), T10 (arithmetic for test loss)
 
 ---
 
@@ -382,13 +382,13 @@ When implementing any T-item, take the time to:
   **Note on format:** this uses Python's pickle, not PyTorch's internal format.
   Files saved by trainadillo cannot be loaded by `torch.load` and vice versa. The
   demoodle artifact cache (persistence.py) will need its existing cached `.pt`
-  files cleared after migration in G20. Consider whether to keep the `.pt`
+  files cleared after migration in T20. Consider whether to keep the `.pt`
   extension (less churn in persistence.py) or change it (clearer that the format
-  differs) — decide during G20 implementation.
+  differs) — decide during T20 implementation.
 - **Done when:** round-trip a dict of Tensors through save/load; round-trip a Module
   subclass through save/load; the computation graph is not serialized (loaded tensors
   are leaves with `_grad_fn=None`).
-- **Depends on:** G1, G12
+- **Depends on:** T1, T12
 
 ### T18. Package wiring (__init__.py files)
 
@@ -410,7 +410,7 @@ When implementing any T-item, take the time to:
   - `from trainadillo import nn; import trainadillo.nn.functional as F`
 - **Done when:** all four import patterns resolve correctly; no circular imports;
   `dir(trainadillo)` shows the expected public API.
-- **Depends on:** G1–G17
+- **Depends on:** T1–T17
 
 ---
 
@@ -435,7 +435,7 @@ When implementing any T-item, take the time to:
 - **Done when:** the integration test passes; loss decreases; sampling works;
   save/load round-trips. This proves trainadillo is a sufficient PyTorch replacement
   for the current codebase.
-- **Depends on:** G18
+- **Depends on:** T18
 
 ### T20. Migrate demoodle imports
 
@@ -462,7 +462,7 @@ When implementing any T-item, take the time to:
   decreasing loss; `uv run demoodle call` generates plausible names; `torch` is not
   importable (not installed) and everything still works; `uv run ruff check .`
   passes.
-- **Depends on:** G19
+- **Depends on:** T19
 
 ---
 
@@ -477,13 +477,13 @@ When implementing any T-item, take the time to:
 - **Build:** `trainadillo/nn/_embedding.py`: `Embedding(num_embeddings, embedding_dim)`.
   Holds a `weight` Parameter of shape `(num_embeddings, embedding_dim)`.
   Forward: `self.weight[input]` — indexes into the weight matrix (uses the
-  differentiable indexing from G11, which already handles batched integer indices).
+  differentiable indexing from T11, which already handles batched integer indices).
   Initialization: normal distribution (mean=0, std=1).
   Add to `nn/__init__.py` exports.
 - **Done when:** `Embedding(10, 4)(tensor([2, 5, 7]))` returns shape `(3, 4)`;
   backward populates gradients on `weight` only at the indexed rows; gradient
   check passes.
-- **Depends on:** G11, G12
+- **Depends on:** T11, T12
 
 ### T22. Activation functions (ReLU, GELU)
 
@@ -498,7 +498,7 @@ When implementing any T-item, take the time to:
   functional versions in their `forward()`.
 - **Done when:** `relu` zeros out negatives, passes positives; `gelu` approximates
   the Gaussian CDF-weighted identity; gradient check passes for both.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
 
 ### T23. Sum & mean reductions
 
@@ -510,7 +510,7 @@ When implementing any T-item, take the time to:
   These are needed internally by loss functions and will be used by layer norm.
 - **Done when:** `x.sum()` and `x.mean()` produce correct values; backward works;
   gradient check passes for various shapes and dim arguments.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
 
 ---
 
@@ -532,7 +532,7 @@ When implementing any T-item, take the time to:
   Also add the `.T` property (transpose for 2-D tensors).
 - **Done when:** gradient flows through reshape, matmul, reshape chains correctly;
   gradient check passes.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
 
 ### T25. nn.LayerNorm
 
@@ -552,7 +552,7 @@ When implementing any T-item, take the time to:
   Add to `nn/__init__.py` exports.
 - **Done when:** output has zero mean and unit variance (before affine); gradient
   check passes; matches expected behavior on known inputs.
-- **Depends on:** G12, G23
+- **Depends on:** T12, T23
 
 ### T26. nn.Dropout
 
@@ -563,12 +563,12 @@ When implementing any T-item, take the time to:
   (inverted dropout).
   Forward (eval mode): identity (pass through unchanged).
   Backward: `grad * mask / (1-p)` (same mask as forward).
-  Uses `Module.training` flag (set by `.train()` / `.eval()` from G12).
+  Uses `Module.training` flag (set by `.train()` / `.eval()` from T12).
   Add to `nn/__init__.py` exports.
 - **Done when:** in training mode, approximately `p` fraction of outputs are zero;
   in eval mode, output equals input; gradient flows through non-zeroed positions;
   gradient check passes.
-- **Depends on:** G8, G9, G12
+- **Depends on:** T8, T9, T12
 
 ### T27. nn.Sequential
 
@@ -580,12 +580,12 @@ When implementing any T-item, take the time to:
   Add to `nn/__init__.py` exports.
 - **Done when:** `Sequential(Linear(4, 8), ReLU(), Linear(8, 2))` works; parameters
   from all children are accessible; backward flows through the chain.
-- **Depends on:** G12, G13, G22
+- **Depends on:** T12, T13, T22
 
 ### T28. Batched matmul & attention primitives
 
 - **Goal:** the matrix operations needed for multi-head self-attention.
-- **Build:** ensure matmul (`@` operator from G10) handles batched inputs:
+- **Build:** ensure matmul (`@` operator from T10) handles batched inputs:
   `(B, N, D) @ (B, D, M) -> (B, N, M)`. The backward must handle these shapes
   correctly — for batched matmul, the gradients are:
   `d/da = grad @ b.transpose(-2, -1)`, `d/db = a.transpose(-2, -1) @ grad`,
@@ -594,14 +594,14 @@ When implementing any T-item, take the time to:
   Add a differentiable `masked_fill` for the causal attention mask: when used
   on a tensor with `requires_grad=True`, the backward passes gradient through
   non-masked positions and zeros through masked positions. (The non-differentiable
-  `masked_fill` from G7 only handles the inference path.)
+  `masked_fill` from T7 only handles the inference path.)
   These are the primitives. The actual multi-head attention (Q/K/V projections,
   scaled dot-product, concatenation) will be built in the transformer architecture
   code in demoodle, not in trainadillo — trainadillo just provides the building blocks.
 - **Done when:** `(B, N, D) @ (B, D, M)` works in forward and backward; gradient
   check passes for batched matmul; masked_fill backward zeros out gradients at
   masked positions.
-- **Depends on:** G10, G9, G24
+- **Depends on:** T10, T9, T24
 
 ---
 
@@ -625,7 +625,7 @@ When implementing any T-item, take the time to:
   and PPO's clipped surrogate objective.
 - **Done when:** gradient check passes for each function; `log_softmax` is
   numerically equivalent to `log(softmax(x))` but stable for large values.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
 
 ### T30. MSE loss & clamp
 
@@ -638,4 +638,4 @@ When implementing any T-item, take the time to:
   These are needed for the reward model (W25) and PPO's clipped ratio (W27).
 - **Done when:** `mse_loss` returns correct value; `clamp` clips correctly;
   gradient check passes for both.
-- **Depends on:** G8, G9
+- **Depends on:** T8, T9
