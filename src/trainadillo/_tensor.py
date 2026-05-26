@@ -113,6 +113,29 @@ class Tensor:
         """Return a 1-D copy."""
         return type(self)(self.data.flatten())
 
+    def masked_fill(self, mask: Tensor, value: float) -> Tensor:
+        """Return a new Tensor with True positions in mask replaced by value.
+
+        self is not modified. Used in nucleus sampling to zero out low-probability
+        tokens by filling their logits with float("-inf") before softmax.
+        """
+        out = self.data.copy()
+        out[mask.data] = value
+        return Tensor(out)
+
+    def scatter(self, dim: int, index: Tensor, src: Tensor) -> Tensor:
+        """Return a new Tensor with src values written at index positions.
+
+        For dim=0 on 1-D tensors: result[index[i]] = src[i]. self is not modified.
+        Only dim=0 is implemented; the N-D general case is deferred to T28.
+        """
+        if dim != 0:
+            msg = f"scatter: dim={dim} not implemented; only dim=0 supported"
+            raise NotImplementedError(msg)
+        out = self.data.copy()
+        out[index.data] = src.data
+        return Tensor(out)
+
     def argmax(self, dim: int | None = None) -> Tensor:
         """Return the index of the maximum value.
 

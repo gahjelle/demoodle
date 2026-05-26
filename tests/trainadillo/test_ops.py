@@ -1,4 +1,4 @@
-"""Tests for trainadillo._ops: topk, sort, softmax, cumsum, multinomial, argmax."""
+"""Tests for trainadillo._ops and Tensor methods."""
 
 import numpy as np
 import pytest
@@ -291,3 +291,86 @@ def test_multinomial_distribution_approximates_probs() -> None:
         assert abs(counts[i] / n - p) < 0.02, (
             f"index {i}: expected ~{p:.3f}, got {counts[i] / n:.3f}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Tensor.masked_fill
+# ---------------------------------------------------------------------------
+
+
+def test_masked_fill_true_positions_replaced() -> None:
+    t = tf(1.0, 2.0, 3.0, 4.0)
+    mask = Tensor(np.array([True, False, True, False]))
+    result = t.masked_fill(mask, -999.0)
+    assert result.tolist() == pytest.approx([-999.0, 2.0, -999.0, 4.0])
+
+
+def test_masked_fill_false_positions_unchanged() -> None:
+    t = tf(1.0, 2.0, 3.0)
+    mask = Tensor(np.array([False, True, False]))
+    result = t.masked_fill(mask, 0.0)
+    assert result.tolist()[0] == pytest.approx(1.0)
+    assert result.tolist()[2] == pytest.approx(3.0)
+
+
+def test_masked_fill_self_not_mutated() -> None:
+    t = tf(1.0, 2.0, 3.0)
+    original = t.data.copy()
+    mask = Tensor(np.array([True, True, True]))
+    t.masked_fill(mask, -1.0)
+    assert t.data == pytest.approx(original)
+
+
+def test_masked_fill_neg_inf() -> None:
+    t = tf(1.0, 2.0, 3.0)
+    mask = Tensor(np.array([False, True, False]))
+    result = t.masked_fill(mask, float("-inf"))
+    assert result.data[1] == float("-inf")
+    assert np.isfinite(result.data[0])
+    assert np.isfinite(result.data[2])
+
+
+# ---------------------------------------------------------------------------
+# Tensor.scatter
+# ---------------------------------------------------------------------------
+
+
+def test_scatter_values_at_specified_indices() -> None:
+    base = tf(0.0, 0.0, 0.0, 0.0)
+    index = Tensor(np.array([3, 1], dtype=np.int64))
+    src = tf(9.0, 7.0)
+    result = base.scatter(0, index, src)
+    assert result.tolist() == pytest.approx([0.0, 7.0, 0.0, 9.0])
+
+
+def test_scatter_unindexed_positions_unchanged() -> None:
+    base = tf(1.0, 2.0, 3.0, 4.0)
+    index = Tensor(np.array([0], dtype=np.int64))
+    src = tf(99.0)
+    result = base.scatter(0, index, src)
+    assert result.tolist() == pytest.approx([99.0, 2.0, 3.0, 4.0])
+
+
+def test_scatter_self_not_mutated() -> None:
+    base = tf(0.0, 0.0, 0.0)
+    original = base.data.copy()
+    index = Tensor(np.array([1], dtype=np.int64))
+    src = tf(5.0)
+    base.scatter(0, index, src)
+    assert base.data == pytest.approx(original)
+
+
+def test_scatter_nonzero_dim_raises() -> None:
+    base = tf(1.0, 2.0, 3.0)
+    index = Tensor(np.array([0], dtype=np.int64))
+    src = tf(9.0)
+    with pytest.raises(NotImplementedError, match="dim=1"):
+        base.scatter(1, index, src)
+
+
+def test_scatter_inverts_sort_permutation() -> None:
+    t = tf(3.0, 1.0, 4.0, 1.0, 5.0)
+    sorted_values, sorted_indices = sort(t, descending=True)
+    zeros = Tensor(np.zeros(5, dtype=np.float32))
+    result = zeros.scatter(0, sorted_indices, sorted_values)
+    assert result.tolist() == pytest.approx(t.tolist())

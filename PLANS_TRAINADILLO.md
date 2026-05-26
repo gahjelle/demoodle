@@ -146,7 +146,7 @@ When implementing any T-item, take the time to:
   reproducible.
 - **Depends on:** T1, T3
 
-### T7. Masking ops & scatter
+### ✅ T7. Masking ops & scatter
 
 - **Goal:** `masked_fill` and `scatter` used in top-k/top-p filtering.
 - **Build:** add both as methods directly on `Tensor` in `trainadillo/_tensor.py`
