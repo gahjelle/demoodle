@@ -63,7 +63,7 @@ def test_tensor_from_existing_tensor_copies() -> None:
     original = Tensor(np.array([1.0, 2.0, 3.0], dtype=np.float32))
     copy = tensor(original)
     # Mutate the original's underlying data to verify copy independence
-    original._data[0] = 99.0
+    original.data[0] = 99.0
     assert copy.tolist()[0] == pytest.approx(1.0)
 
 

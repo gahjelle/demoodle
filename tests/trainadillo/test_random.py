@@ -13,7 +13,7 @@ from trainadillo._tensor import Tensor
 @pytest.fixture(autouse=True)
 def reset_default_generator(monkeypatch: pytest.MonkeyPatch) -> None:
     """Reset the module-level default generator to None before each test."""
-    monkeypatch.setattr(_rng_module, "_default_generator", None)
+    monkeypatch.setattr(_rng_module._state, "default", None)
 
 
 # --- rand ---
@@ -30,20 +30,20 @@ def test_rand_shape_and_dtype() -> None:
 def test_rand_values_in_range() -> None:
     g = Generator().manual_seed(1)
     result = rand(1000, generator=g)
-    assert float(result._data.min()) >= 0.0
-    assert float(result._data.max()) < 1.0
+    assert float(result.data.min()) >= 0.0
+    assert float(result.data.max()) < 1.0
 
 
 def test_rand_same_seed_reproducible() -> None:
     g1 = Generator().manual_seed(42)
     g2 = Generator().manual_seed(42)
-    assert np.array_equal(rand(5, generator=g1)._data, rand(5, generator=g2)._data)
+    assert np.array_equal(rand(5, generator=g1).data, rand(5, generator=g2).data)
 
 
 def test_rand_different_seeds_diverge() -> None:
     g1 = Generator().manual_seed(1)
     g2 = Generator().manual_seed(2)
-    assert not np.array_equal(rand(5, generator=g1)._data, rand(5, generator=g2)._data)
+    assert not np.array_equal(rand(5, generator=g1).data, rand(5, generator=g2).data)
 
 
 # --- randint ---
@@ -60,16 +60,16 @@ def test_randint_shape_and_dtype() -> None:
 def test_randint_values_in_range() -> None:
     g = Generator().manual_seed(2)
     result = randint(0, 10, (1000,), generator=g)
-    assert int(result._data.min()) >= 0
-    assert int(result._data.max()) < 10
+    assert int(result.data.min()) >= 0
+    assert int(result.data.max()) < 10
 
 
 def test_randint_same_seed_reproducible() -> None:
     g1 = Generator().manual_seed(99)
     g2 = Generator().manual_seed(99)
     assert np.array_equal(
-        randint(0, 100, (10,), generator=g1)._data,
-        randint(0, 100, (10,), generator=g2)._data,
+        randint(0, 100, (10,), generator=g1).data,
+        randint(0, 100, (10,), generator=g2).data,
     )
 
 
@@ -77,8 +77,8 @@ def test_randint_different_seeds_diverge() -> None:
     g1 = Generator().manual_seed(3)
     g2 = Generator().manual_seed(4)
     assert not np.array_equal(
-        randint(0, 100, (10,), generator=g1)._data,
-        randint(0, 100, (10,), generator=g2)._data,
+        randint(0, 100, (10,), generator=g1).data,
+        randint(0, 100, (10,), generator=g2).data,
     )
 
 

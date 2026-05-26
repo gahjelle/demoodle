@@ -20,9 +20,9 @@ def isolate_default_generator() -> IteratorGen:
     Prevents module-level state from leaking between tests regardless of
     execution order. Tests that need the default set call manual_seed() themselves.
     """
-    rng_module._default_generator = None
+    rng_module._state.default = None
     yield
-    rng_module._default_generator = None
+    rng_module._state.default = None
 
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ def isolate_default_generator() -> IteratorGen:
 
 def test_generator_constructs_without_error() -> None:
     g = Generator()
-    assert isinstance(g._np_rng, np.random.Generator)
+    assert isinstance(g.np_rng, np.random.Generator)
 
 
 # ---------------------------------------------------------------------------
@@ -43,9 +43,9 @@ def test_generator_constructs_without_error() -> None:
 def test_same_seed_reproduces_sequence() -> None:
     g = Generator()
     g.manual_seed(42)
-    draws1 = g._np_rng.random(5).tolist()
+    draws1 = g.np_rng.random(5).tolist()
     g.manual_seed(42)
-    draws2 = g._np_rng.random(5).tolist()
+    draws2 = g.np_rng.random(5).tolist()
     assert draws1 == draws2
 
 
@@ -59,7 +59,7 @@ def test_different_seeds_diverge() -> None:
     g1.manual_seed(42)
     g2 = Generator()
     g2.manual_seed(99)
-    assert g1._np_rng.random(5).tolist() != g2._np_rng.random(5).tolist()
+    assert g1.np_rng.random(5).tolist() != g2.np_rng.random(5).tolist()
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +109,7 @@ def test_module_manual_seed_returns_seeded_generator() -> None:
 
 def test_module_manual_seed_returns_default_generator() -> None:
     g = rng_module.manual_seed(42)
-    assert g is rng_module._default_generator
+    assert g is rng_module._state.default
 
 
 # ---------------------------------------------------------------------------
@@ -119,11 +119,11 @@ def test_module_manual_seed_returns_default_generator() -> None:
 
 def test_module_manual_seed_same_seed_reproduces_sequence() -> None:
     rng_module.manual_seed(42)
-    assert rng_module._default_generator is not None
-    draws1 = rng_module._default_generator._np_rng.random(5).tolist()
+    assert rng_module._state.default is not None
+    draws1 = rng_module._state.default.np_rng.random(5).tolist()
     rng_module.manual_seed(42)
-    assert rng_module._default_generator is not None
-    draws2 = rng_module._default_generator._np_rng.random(5).tolist()
+    assert rng_module._state.default is not None
+    draws2 = rng_module._state.default.np_rng.random(5).tolist()
     assert draws1 == draws2
 
 
@@ -135,7 +135,7 @@ def test_module_manual_seed_same_seed_reproduces_sequence() -> None:
 def test_default_generator_starts_as_none() -> None:
     # Reload verifies the module-level initialisation, not just the fixture.
     importlib.reload(rng_module)
-    assert rng_module._default_generator is None
+    assert rng_module._state.default is None
 
 
 # ---------------------------------------------------------------------------
@@ -145,4 +145,4 @@ def test_default_generator_starts_as_none() -> None:
 
 def test_default_generator_set_after_manual_seed() -> None:
     rng_module.manual_seed(42)
-    assert rng_module._default_generator is not None
+    assert rng_module._state.default is not None

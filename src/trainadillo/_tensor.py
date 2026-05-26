@@ -29,7 +29,7 @@ class Tensor:
         """Wrap a numpy array. Scalars are promoted to 0-D arrays via np.asarray."""
         # Any here: numpy stubs don't support arithmetic on np.dtype[np.generic];
         # type is enforced at the public boundary (properties, method signatures).
-        self._data: Any = np.asarray(data)
+        self.data: Any = np.asarray(data)
 
     # ------------------------------------------------------------------
     # Shape metadata
@@ -38,22 +38,17 @@ class Tensor:
     @property
     def shape(self) -> Size:
         """Return the tensor's shape as a Size."""
-        return Size(self._data.shape)
+        return Size(self.data.shape)
 
     @property
     def ndim(self) -> int:
         """Return the number of dimensions."""
-        return int(self._data.ndim)
+        return int(self.data.ndim)
 
     @property
     def dtype(self) -> np.dtype[np.generic]:
         """Return the element dtype."""
-        return self._data.dtype
-
-    @property
-    def data(self) -> NDArray:
-        """Return the underlying numpy array."""
-        return self._data
+        return self.data.dtype
 
     # ------------------------------------------------------------------
     # Extraction and conversion
@@ -61,19 +56,19 @@ class Tensor:
 
     def item(self) -> float | int | bool:
         """Extract a Python scalar from a 0-D or single-element tensor."""
-        return self._data.item()
+        return self.data.item()
 
-    def tolist(self) -> Any:  # noqa: ANN401 — inherently recursive; numpy types as Any
+    def tolist(self) -> Any:  # noqa: ANN401
         """Convert to nested Python lists, or a Python scalar for 0-D tensors."""
-        return self._data.tolist()
+        return self.data.tolist()
 
     def __len__(self) -> int:
         """Return the size of the first dimension."""
-        return int(self._data.shape[0])
+        return int(self.data.shape[0])
 
     def __repr__(self) -> str:
         """Return tensor(...) repr, matching PyTorch's format closely."""
-        return f"tensor({np.array2string(self._data, precision=4, separator=', ')})"
+        return f"tensor({np.array2string(self.data, precision=4, separator=', ')})"
 
     # ------------------------------------------------------------------
     # Size and shape manipulation
@@ -81,7 +76,7 @@ class Tensor:
 
     def size(self, dim: int | None = None) -> Size | int:
         """Return the full shape as a Size, or the size along one dimension."""
-        s = Size(self._data.shape)
+        s = Size(self.data.shape)
         return s if dim is None else s[dim]
 
     def cpu(self) -> Self:
@@ -104,19 +99,19 @@ class Tensor:
             and isinstance(shape_or_dtype[0], type)
             and issubclass(shape_or_dtype[0], np.generic)
         ):
-            return type(self)(self._data.view(shape_or_dtype[0]))
+            return type(self)(self.data.view(shape_or_dtype[0]))
         shape = tuple(int(x) for x in shape_or_dtype)  # ty: ignore[invalid-argument-type]
-        return type(self)(self._data.reshape(shape))
+        return type(self)(self.data.reshape(shape))
 
     def squeeze(self, dim: int | None = None) -> Self:
         """Remove dimensions of size 1."""
         if dim is None:
-            return type(self)(self._data.squeeze())
-        return type(self)(np.squeeze(self._data, axis=dim))
+            return type(self)(self.data.squeeze())
+        return type(self)(np.squeeze(self.data, axis=dim))
 
     def flatten(self) -> Self:
         """Return a 1-D copy."""
-        return type(self)(self._data.flatten())
+        return type(self)(self.data.flatten())
 
     def argmax(self, dim: int | None = None) -> Tensor:
         """Return the index of the maximum value.
@@ -125,7 +120,7 @@ class Tensor:
         Tensor. When dim is given, returns a Tensor with that dimension removed.
         Matches torch.Tensor.argmax behaviour.
         """
-        return Tensor(np.argmax(self._data, axis=dim))
+        return Tensor(np.argmax(self.data, axis=dim))
 
     # ------------------------------------------------------------------
     # Indexing — always returns a Tensor, never a Python scalar
@@ -138,8 +133,8 @@ class Tensor:
         0-D Tensor (shape ()), not a Python scalar. This is critical for T11:
         weight[token_id] must remain in the gradient graph.
         """
-        index = key._data if isinstance(key, Tensor) else key  # noqa: SLF001
-        return Tensor(np.asarray(self._data[index]))
+        index = key.data if isinstance(key, Tensor) else key
+        return Tensor(np.asarray(self.data[index]))
 
     # ------------------------------------------------------------------
     # Arithmetic operators — non-differentiable in T1; upgraded in T10
@@ -147,47 +142,47 @@ class Tensor:
 
     def __add__(self, other: Tensor | float) -> Tensor:
         """Element-wise addition."""
-        return Tensor(self._data + _data(other))
+        return Tensor(self.data + _unwrap(other))
 
     def __radd__(self, other: float) -> Tensor:
         """Right-hand addition: other + self."""
-        return Tensor(other + self._data)
+        return Tensor(other + self.data)
 
     def __sub__(self, other: Tensor | float) -> Tensor:
         """Element-wise subtraction."""
-        return Tensor(self._data - _data(other))
+        return Tensor(self.data - _unwrap(other))
 
     def __rsub__(self, other: float) -> Tensor:
         """Right-hand subtraction: other - self."""
-        return Tensor(other - self._data)
+        return Tensor(other - self.data)
 
     def __mul__(self, other: Tensor | float) -> Tensor:
         """Element-wise multiplication."""
-        return Tensor(self._data * _data(other))
+        return Tensor(self.data * _unwrap(other))
 
     def __rmul__(self, other: float) -> Tensor:
         """Right-hand multiplication: other * self."""
-        return Tensor(other * self._data)
+        return Tensor(other * self.data)
 
     def __truediv__(self, other: Tensor | float) -> Tensor:
         """Element-wise division."""
-        return Tensor(self._data / _data(other))
+        return Tensor(self.data / _unwrap(other))
 
     def __rtruediv__(self, other: float) -> Tensor:
         """Right-hand division: other / self."""
-        return Tensor(other / self._data)
+        return Tensor(other / self.data)
 
     def __neg__(self) -> Tensor:
         """Negate all elements."""
-        return Tensor(-self._data)
+        return Tensor(-self.data)
 
     def __matmul__(self, other: Tensor) -> Tensor:
         """Matrix multiplication."""
-        return Tensor(self._data @ other._data)
+        return Tensor(self.data @ other.data)
 
     def __rmatmul__(self, other: Tensor) -> Tensor:
         """Right-hand matrix multiplication: other @ self."""
-        return Tensor(other._data @ self._data)
+        return Tensor(other.data @ self.data)
 
     # ------------------------------------------------------------------
     # Comparison operators — return boolean Tensors, never Python bools.
@@ -197,29 +192,29 @@ class Tensor:
 
     def __gt__(self, other: Tensor | float) -> Tensor:
         """Element-wise greater-than; returns a boolean Tensor."""
-        return Tensor(self._data > _data(other))
+        return Tensor(self.data > _unwrap(other))
 
     def __ge__(self, other: Tensor | float) -> Tensor:
         """Element-wise greater-than-or-equal; returns a boolean Tensor."""
-        return Tensor(self._data >= _data(other))
+        return Tensor(self.data >= _unwrap(other))
 
     def __lt__(self, other: Tensor | float) -> Tensor:
         """Element-wise less-than; returns a boolean Tensor."""
-        return Tensor(self._data < _data(other))
+        return Tensor(self.data < _unwrap(other))
 
     def __le__(self, other: Tensor | float) -> Tensor:
         """Element-wise less-than-or-equal; returns a boolean Tensor."""
-        return Tensor(self._data <= _data(other))
+        return Tensor(self.data <= _unwrap(other))
 
     def __eq__(self, other: object) -> Tensor:  # ty: ignore[invalid-method-override]
         """Element-wise equality; returns a boolean Tensor."""
-        other_data = other._data if isinstance(other, Tensor) else other
-        return Tensor(self._data == other_data)
+        other_data = other.data if isinstance(other, Tensor) else other
+        return Tensor(self.data == other_data)
 
     def __ne__(self, other: object) -> Tensor:  # ty: ignore[invalid-method-override]
         """Element-wise inequality; returns a boolean Tensor."""
-        other_data = other._data if isinstance(other, Tensor) else other
-        return Tensor(self._data != other_data)
+        other_data = other.data if isinstance(other, Tensor) else other
+        return Tensor(self.data != other_data)
 
     def __bool__(self) -> bool:
         """Raise TypeError — boolean conversion of a Tensor is always ambiguous.
@@ -238,6 +233,6 @@ class Tensor:
 # ------------------------------------------------------------------
 
 
-def _data(value: Tensor | float) -> NDArray | float:
+def _unwrap(value: Tensor | float) -> NDArray | float:
     """Unwrap a Tensor to its underlying numpy array, or pass scalars through."""
-    return value._data if isinstance(value, Tensor) else value  # noqa: SLF001
+    return value.data if isinstance(value, Tensor) else value

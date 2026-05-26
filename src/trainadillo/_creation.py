@@ -19,7 +19,7 @@ def tensor(data: object, *, dtype: type[np.generic] | None = None) -> Tensor:
     When dtype is None and the inferred dtype is float64, downgrades to float32
     to match PyTorch's default dtype behaviour.
     """
-    raw: NDArray = data._data if isinstance(data, Tensor) else np.array(data)  # noqa: SLF001
+    raw: NDArray = data.data if isinstance(data, Tensor) else np.array(data)
     if dtype is not None:
         return Tensor(raw.astype(dtype, copy=True))
     # Downgrade float64 → float32: numpy infers float64 for Python floats, but
@@ -42,12 +42,12 @@ def ones(*shape: int) -> Tensor:
 
 def zeros_like(t: Tensor) -> Tensor:
     """Return a Tensor of the same shape and dtype as t, filled with zeros."""
-    return Tensor(np.zeros_like(t._data))  # noqa: SLF001
+    return Tensor(np.zeros_like(t.data))
 
 
 def full_like(t: Tensor, value: float) -> Tensor:
     """Return a Tensor of the same shape and dtype as t, filled with value."""
-    return Tensor(np.full_like(t._data, value))  # noqa: SLF001
+    return Tensor(np.full_like(t.data, value))
 
 
 def arange(n: int) -> Tensor:
@@ -61,7 +61,7 @@ def arange(n: int) -> Tensor:
 
 def stack(tensors: Sequence[Tensor], dim: int = 0) -> Tensor:
     """Stack a sequence of Tensors along a new axis at dim."""
-    arrays = [t._data for t in tensors]  # noqa: SLF001
+    arrays = [t.data for t in tensors]
     return Tensor(np.stack(arrays, axis=dim))
 
 
@@ -71,4 +71,4 @@ def equal(a: Tensor, b: Tensor) -> bool:
     This is a full reduction to a Python bool — torch.equal semantics.
     It is NOT the same as a == b, which returns an element-wise boolean Tensor.
     """
-    return bool(np.array_equal(a._data, b._data))  # noqa: SLF001
+    return bool(np.array_equal(a.data, b.data))

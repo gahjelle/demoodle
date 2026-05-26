@@ -128,7 +128,7 @@ When implementing any T-item, take the time to:
   `descending=True` works; `argmax` returns the index of the maximum.
 - **Depends on:** T1
 
-### T6. Softmax, cumsum, multinomial
+### ✅ T6. Softmax, cumsum, multinomial
 
 - **Goal:** the probability-distribution operations used in sampling.
 - **Build:** in `trainadillo/_ops.py`:
@@ -148,24 +148,42 @@ When implementing any T-item, take the time to:
 
 ### T7. Masking ops & scatter
 
-- **Goal:** `masked_fill` and `scatter_` used in top-k/top-p filtering.
-- **Build:** in `trainadillo/_ops.py`:
+- **Goal:** `masked_fill` and `scatter` used in top-k/top-p filtering.
+- **Build:** add both as methods directly on `Tensor` in `trainadillo/_tensor.py`
+  (not `_ops.py` — they are instance methods, matching the pattern of `argmax`):
   `Tensor.masked_fill(mask, value)` — return a new Tensor where positions where
-  `mask` is True are replaced with `value`. (Note: PyTorch's `masked_fill` is
-  in-place with an underscore variant, but the codebase uses the non-in-place form
-  via method syntax: `sorted_logits.masked_fill(to_remove, float("-inf"))`. Support
-  both.)
-  `Tensor.scatter_(dim, index, src)` — in-place scatter. Writes values from `src`
-  into `self` at positions given by `index` along `dim`. This modifies the tensor
-  in-place (returns self for chaining). For the dim=0 case used by the codebase,
-  the numpy equivalent is fancy indexing: `self._data[index._data] = src._data`.
-  For general dims, iterate or use `np.put_along_axis` (but note
-  `np.put_along_axis` has slightly different semantics — test carefully).
-  The codebase uses: `mask.scatter_(0, top_indices, scaled[top_indices])` and
-  `torch.zeros_like(scaled).scatter_(0, sorted_indices, sorted_logits)`.
-- **Done when:** `masked_fill` replaces correct positions; `scatter_` places values
-  at the right indices; the full `_sample()` function from bigram.py works when
-  using trainadillo tensors (test with a known logit vector).
+  `mask` is True are replaced with `value`. Only the non-in-place form (no
+  `masked_fill_`); `src` is always a Tensor (no scalar variant needed).
+  `Tensor.scatter(dim, index, src)` — non-in-place scatter. Returns a new Tensor
+  with values from `src` written at positions `index` along `dim`. For dim=0 on
+  1-D tensors: `result[index[i]] = src[i]`, equivalent to numpy fancy-index
+  assignment on a copy: `out = self._data.copy(); out[index._data] = src._data`.
+  **Note:** this is the non-in-place `scatter` (PyTorch 1.8+), not `scatter_`.
+  `src` is always a Tensor (no scalar variant needed).
+  Also update `src/demoodle/architectures/bigram.py` to replace the two `scatter_`
+  call sites with the non-in-place form before exposing `scatter` in `__init__.py`.
+- **Task order** (do demoodle update first to validate against real PyTorch):
+  1. Rewrite the two `scatter_` call sites in `bigram.py` to use `scatter`
+  2. Run `uv run pytest tests/architectures/test_bigram.py` against real PyTorch
+  3. Implement `masked_fill` and `scatter` on `Tensor` in `_tensor.py`
+  4. Unit tests in `tests/trainadillo/test_ops.py`
+  5. PyTorch compatibility tests in `tests/trainadillo/test_compat_pytorch.py`
+     (requires `pytest.importorskip("torch")` — these tests are intentionally
+     temporary and will be deleted at T20 when PyTorch is removed):
+     - Exact match (np.allclose) for deterministic sub-ops: `softmax`, `scatter`,
+       `masked_fill`, `cumsum` given identical inputs
+     - Full pipeline match: replicate the `_sample()` filtering logic up to but
+       not including `multinomial`, assert the resulting `probs` tensor matches
+       between libraries — proves the filtering is identical, isolating any
+       remaining difference to RNG choice
+     - Corner cases: `top_k=1` and `top_p=0.0` collapse to argmax, so both
+       libraries must return the same token (no randomness, exact agreement)
+  6. Ruff, ty, full pytest
+  7. Educational doc, mark T7 done
+- **Done when:** `masked_fill` replaces correct positions; `scatter` places values
+  at the right indices; `uv run pytest tests/architectures/test_bigram.py` passes;
+  the compatibility tests confirm the filtering pipeline is bit-for-bit equivalent
+  to PyTorch up to float32 precision.
 - **Depends on:** T1, T2
 
 ---
