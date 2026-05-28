@@ -184,7 +184,7 @@ When implementing any W-item, take the time to:
 - **Build:** Bengio-style MLP (embedding table, context window, hidden layer,
   output) implementing the same `Architecture`/`Inspectable` protocol.
 - **Done when:** trains via the **existing** `pretrain` stage with only a config
-  change; lower loss / better samples than bigram; **no runner or stage edits.**
+  change; lower loss / better samples than bigram and trigram; **no runner or stage edits.**
 - **Depends on:** W10, W11
 
 ### W14. TinyShakespeare corpus
@@ -232,7 +232,7 @@ When implementing any W-item, take the time to:
 ### W17. Attention inspection (`explain`)
 - **Goal:** make attention visible.
 - **Build:** implement `explain()` on the transformer to return attention weights
-  / per-position info; bigram & MLP still return `{}`.
+  / per-position info; bigram, trigram, & MLP still return `{}`.
 - **Done when:** `explain` yields attention matrices of correct shape; front ends
   can feature-detect presence. CLI: expose an `attn` verb that renders the matrix as
   a text heatmap.

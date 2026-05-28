@@ -11,6 +11,7 @@ from rich.live import Live
 from rich.text import Text
 
 from demoodle.architectures.bigram import BigramArchitecture
+from demoodle.architectures.trigram import TrigramArchitecture
 from demoodle.config import config
 from demoodle.core.rng import RNG
 from demoodle.data.loaders import load_corpus
@@ -67,6 +68,8 @@ def _make_arch(vocab_size: int) -> ArchitectureProtocol:
     match config.architecture.active:
         case "bigram":
             return BigramArchitecture(vocab_size=vocab_size)
+        case "trigram":
+            return TrigramArchitecture(vocab_size=vocab_size)
         case other:
             msg = f"Unknown architecture {other!r} — is it implemented yet?"
             raise ValueError(msg)
@@ -115,9 +118,11 @@ def _generate(
     """Sample a single continuation from `prompt`, stopping on newline or max_len."""
     token_ids = tokenizer.encode(prompt)
     prompt_len = len(token_ids)
+    bos_id = tokenizer.encode("\n")[0]
     for _ in range(max_len):
         rng, step_rng = rng.split()
-        seq = torch.tensor(token_ids[-context_length:])
+        padded = [bos_id] * max(0, context_length - len(token_ids)) + token_ids
+        seq = torch.tensor(padded[-context_length:])
         output = arch.call(seq, policy, step_rng, temperature)
         if output.sampled_ids is None:
             msg = "arch.call() did not return sampled_ids"

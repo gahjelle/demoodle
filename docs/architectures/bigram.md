@@ -76,11 +76,13 @@ There are no other hyperparameters. The bigram has no hidden size, no context le
 
 ---
 
-## Relation to MLP
+## Relation to Trigram and MLP
 
-The MLP (next) extends the bigram by:
-1. Looking at a *window* of recent tokens (context length `k`) instead of just one
+The natural next step from bigram is the **trigram**: same lookup-table mechanism, but using the last *two* tokens (`W[t_{n-1}, t_n, :]` from a V×V×V tensor). The trigram captures two-character onset and coda patterns that the bigram misses entirely. It is practical only for small character-level vocabularies — the weight tensor grows as V³.
+
+The **MLP** (next planned architecture) extends both by:
+1. Looking at a *window* of `k` recent tokens instead of just one or two
 2. Mapping each token to a learned *embedding vector* instead of using raw indices
 3. Passing those embeddings through a hidden layer before predicting
 
-The bigram is equivalent to an MLP with `k=1` and no hidden layer — just the weight matrix directly from input to logits.
+The bigram is equivalent to an MLP with `k=1` and no hidden layer. The trigram sits between them — more context than bigram, but still a direct lookup rather than learned embeddings.

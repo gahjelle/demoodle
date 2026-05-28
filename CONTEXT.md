@@ -59,7 +59,7 @@ A structural interface (`ports/protocols.py`) defining a behavioral contract. Cl
 
 **Named protocols:**
 - `TokenizerProtocol` — `encode(text) -> list[int]`, `decode(ids) -> str`, `vocab_size: int`
-- `ArchitectureProtocol` — `vocab_size: int`, `context_length: int` (number of preceding tokens per prediction; 1 for bigram), `init_state(rng: RNG) -> Policy` (config bound at construction), `forward(policy, tokens) -> Output`
+- `ArchitectureProtocol` — `vocab_size: int`, `context_length: int` (number of preceding tokens per prediction; 1 for bigram, 2 for trigram), `init_state(rng: RNG) -> Policy` (config bound at construction), `forward(policy, tokens) -> Output`
 - `InspectableProtocol` — `call(seq, policy, rng, temperature, top_k=None, top_p=None) -> Output`, `explain(seq, policy) -> dict` (optional, defaults to `{}`)
 
 ---

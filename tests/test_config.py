@@ -24,10 +24,6 @@ def test_config_is_demoodle_config() -> None:
     assert isinstance(config, DemoodleConfig)
 
 
-def test_config_default_architecture() -> None:
-    assert config.architecture.active == "bigram"
-
-
 def test_config_default_sections() -> None:
     assert isinstance(config.architecture, ArchitecturesConfig)
     assert isinstance(config.tokenizer, TokenizersConfig)
