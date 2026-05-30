@@ -53,6 +53,36 @@ Distinct from **RNG**: `RNG` is Demoodle's immutable JAX-style seed value; `Gene
 
 ---
 
+## GradFn
+
+Abstract base class (`trainadillo/_autograd.py`) for backward functions in the computation graph. Every differentiable op creates a concrete `GradFn` subclass that captures the forward-pass values it needs and implements `backward(grad_output) -> list[(Tensor, np.ndarray)]` — returning one gradient contribution per input tensor. The `inputs` list holds the tensors whose `.grad` will eventually receive those contributions.
+
+---
+
+## grad_fn
+
+Instance field on `trainadillo.Tensor` (added in T8). Points to the `GradFn` node that produced this tensor, or `None` for leaf tensors. The implicit computation graph is the chain of `grad_fn` pointers reachable from the loss tensor. `tensor.is_leaf` is `True` iff `grad_fn is None`.
+
+---
+
+## requires_grad
+
+Boolean field on `trainadillo.Tensor`. When `True`, the tensor participates in gradient computation — its `.grad` will be populated by `backward()`. Leaf tensors with `requires_grad=True` are the model's learnable parameters.
+
+---
+
+## Backward pass
+
+The phase of training that computes gradients. `loss.backward()` walks the computation graph in reverse topological order, calling each `GradFn.backward()` and accumulating contributions into leaf tensors' `.grad` fields. The forward pass builds the graph implicitly; the backward pass consumes and discards it.
+
+---
+
+## Leaf tensor
+
+A tensor with `grad_fn=None` — created directly by user code, not as the output of a differentiable op. Model parameters and inputs are leaves. Only leaf tensors with `requires_grad=True` accumulate `.grad`. Intermediate tensors produced by ops (`is_leaf=False`) have transient gradients that are not retained after `backward()`.
+
+---
+
 ## Protocol
 
 A structural interface (`ports/protocols.py`) defining a behavioral contract. Classes satisfy a protocol by implementing the required methods — no inheritance needed. Protocol names carry the `Protocol` suffix to avoid shadowing artifact types with the same name (e.g., `TokenizerProtocol` vs the `CharTokenizer`/`BpeTokenizer` artifacts).

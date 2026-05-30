@@ -362,6 +362,32 @@ def test_repr_0d_tensor() -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# 3.14 — shape-manipulation methods return Tensor, not subclass (T8 fix)
+# ---------------------------------------------------------------------------
+
+
+class _SubTensor(Tensor):
+    """Minimal Tensor subclass used to verify type(self) is not leaked."""
+
+
+def test_view_returns_tensor_not_subclass() -> None:
+    p = _SubTensor(np.zeros((6,), dtype=np.float32))
+    assert type(p.view(2, 3)) is Tensor
+    assert type(p.view(uint8)) is Tensor
+
+
+def test_squeeze_returns_tensor_not_subclass() -> None:
+    p = _SubTensor(np.zeros((1, 3), dtype=np.float32))
+    assert type(p.squeeze()) is Tensor
+    assert type(p.squeeze(0)) is Tensor
+
+
+def test_flatten_returns_tensor_not_subclass() -> None:
+    p = _SubTensor(np.zeros((2, 3), dtype=np.float32))
+    assert type(p.flatten()) is Tensor
+
+
 def test_len_1d() -> None:
     assert len(t1d(1.0, 2.0, 3.0)) == 3
 

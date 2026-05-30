@@ -190,7 +190,7 @@ When implementing any T-item, take the time to:
 
 ## Milestone T2 — Autograd Engine
 
-### T8. Computation graph & backward pass
+### ✅ T8. Computation graph & backward pass
 
 - **Goal:** the autograd core — build a computation graph and walk it backward.
 - **Build:** `trainadillo/_autograd.py`:

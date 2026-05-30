@@ -1,10 +1,13 @@
 """The Tensor type: numpy array wrapper with PyTorch-compatible API."""
 
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
 from trainadillo._size import Size
+
+if TYPE_CHECKING:
+    from trainadillo._autograd import GradFn
 
 type NDArray = np.ndarray[Any, np.dtype[np.generic]]
 
@@ -19,17 +22,64 @@ class Tensor:
     """Multidimensional array with a PyTorch-compatible interface.
 
     Wraps a numpy.ndarray and exposes shape metadata, arithmetic, comparison,
-    and indexing operations. Autograd fields (grad, requires_grad, _grad_fn)
-    are absent in T1 and added in T8 when the computation graph exists to use them.
+    and indexing operations. Autograd fields (grad, requires_grad, grad_fn,
+    is_leaf) are absent in T1 and added in T8 when the computation graph exists.
     """
 
     __hash__: None = None  # Tensors are unhashable, matching PyTorch behaviour.
 
-    def __init__(self, data: NDArray) -> None:
+    def __init__(self, data: NDArray, *, requires_grad: bool = False) -> None:
         """Wrap a numpy array. Scalars are promoted to 0-D arrays via np.asarray."""
         # Any here: numpy stubs don't support arithmetic on np.dtype[np.generic];
         # type is enforced at the public boundary (properties, method signatures).
         self.data: Any = np.asarray(data)
+        self.requires_grad: bool = requires_grad
+        self.grad: Tensor | None = None
+        self.grad_fn: GradFn | None = None
+
+    # ------------------------------------------------------------------
+    # Autograd
+    # ------------------------------------------------------------------
+
+    @property
+    def is_leaf(self) -> bool:
+        """True when this tensor was created directly, not by an operation.
+
+        A tensor is a leaf iff grad_fn is None. Parameters are always leaves;
+        intermediate results of differentiable ops are not.
+        """
+        return self.grad_fn is None
+
+    def detach(self) -> Tensor:
+        """Return a tensor sharing data but outside the computation graph."""
+        return Tensor(self.data)
+
+    def backward(self) -> None:
+        """Walk the computation graph and accumulate gradients into leaves.
+
+        The backward pass has three phases:
+          1. DFS post-order from self.grad_fn to collect all GradFn nodes.
+          2. Seed: assign gradient 1.0 to this (scalar) tensor's grad_fn.
+          3. Walk in reverse topological order, calling each GradFn.backward()
+             and routing contributions to leaves (.grad) or upstream buffers.
+        """
+        if self.data.shape != ():
+            msg = "backward() can only be called on scalar tensors"
+            raise RuntimeError(msg)
+
+        if self.grad_fn is None:
+            if self.requires_grad:
+                self.grad = Tensor(np.ones_like(self.data))
+            return
+
+        topo: list[GradFn] = []
+        _topo_dfs(self.grad_fn, set(), topo)
+
+        accumulated: dict[int, Any] = {id(self.grad_fn): np.ones(())}
+        for node in reversed(topo):
+            grad = accumulated[id(node)]
+            for tensor, grad_contrib in node.backward(grad):
+                _accumulate(tensor, grad_contrib, accumulated)
 
     # ------------------------------------------------------------------
     # Shape metadata
@@ -87,7 +137,7 @@ class Tensor:
         """No-op: numpy arrays are always in C-contiguous memory."""
         return self
 
-    def view(self, *shape_or_dtype: int | type[np.generic]) -> Self:
+    def view(self, *shape_or_dtype: int | type[np.generic]) -> Tensor:
         """Reshape or reinterpret raw bytes.
 
         Called with ints: reshape (like numpy.reshape).
@@ -99,19 +149,19 @@ class Tensor:
             and isinstance(shape_or_dtype[0], type)
             and issubclass(shape_or_dtype[0], np.generic)
         ):
-            return type(self)(self.data.view(shape_or_dtype[0]))
+            return Tensor(self.data.view(shape_or_dtype[0]))
         shape = tuple(int(x) for x in shape_or_dtype)  # ty: ignore[invalid-argument-type]
-        return type(self)(self.data.reshape(shape))
+        return Tensor(self.data.reshape(shape))
 
-    def squeeze(self, dim: int | None = None) -> Self:
+    def squeeze(self, dim: int | None = None) -> Tensor:
         """Remove dimensions of size 1."""
         if dim is None:
-            return type(self)(self.data.squeeze())
-        return type(self)(np.squeeze(self.data, axis=dim))
+            return Tensor(self.data.squeeze())
+        return Tensor(np.squeeze(self.data, axis=dim))
 
-    def flatten(self) -> Self:
+    def flatten(self) -> Tensor:
         """Return a 1-D copy."""
-        return type(self)(self.data.flatten())
+        return Tensor(self.data.flatten())
 
     def masked_fill(self, mask: Tensor, value: float) -> Tensor:
         """Return a new Tensor with True positions in mask replaced by value.
@@ -252,8 +302,33 @@ class Tensor:
 
 
 # ------------------------------------------------------------------
-# Internal helper
+# Internal helpers
 # ------------------------------------------------------------------
+
+
+def _topo_dfs(node: GradFn, visited: set[int], topo: list[GradFn]) -> None:
+    """Recursive DFS post-order traversal; appends nodes to topo."""
+    if id(node) in visited:
+        return
+    visited.add(id(node))
+    for inp in node.inputs:
+        if inp.grad_fn is not None:
+            _topo_dfs(inp.grad_fn, visited, topo)
+    topo.append(node)
+
+
+def _accumulate(tensor: Tensor, contrib: NDArray, accumulated: dict[int, Any]) -> None:
+    """Route a gradient contribution to a leaf's .grad or an upstream buffer."""
+    if tensor.is_leaf:
+        if tensor.requires_grad:
+            if tensor.grad is None:
+                tensor.grad = Tensor(np.zeros_like(tensor.data))
+            tensor.grad = Tensor(tensor.grad.data + contrib)
+    elif tensor.grad_fn is not None:
+        fn_id = id(tensor.grad_fn)
+        if fn_id not in accumulated:
+            accumulated[fn_id] = np.zeros_like(contrib)
+        accumulated[fn_id] = accumulated[fn_id] + contrib
 
 
 def _unwrap(value: Tensor | float) -> NDArray | float:
