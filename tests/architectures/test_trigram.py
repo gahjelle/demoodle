@@ -1,8 +1,7 @@
 import pytest
 import torch
 
-from demoodle.architectures.bigram import BigramArchitecture, BigramModel
-from demoodle.architectures.sampling import sample
+from demoodle.architectures.trigram import TrigramArchitecture, TrigramModel
 from demoodle.core.rng import RNG
 from demoodle.core.types import Output, Policy
 
@@ -11,38 +10,51 @@ RNG0 = RNG(seed=0)
 
 
 @pytest.fixture
-def arch() -> BigramArchitecture:
-    return BigramArchitecture(vocab_size=VOCAB)
+def arch() -> TrigramArchitecture:
+    return TrigramArchitecture(vocab_size=VOCAB)
 
 
 @pytest.fixture
-def policy(arch: BigramArchitecture) -> Policy:
+def policy(arch: TrigramArchitecture) -> Policy:
     return arch.init_state(RNG0)
 
 
 # ---------------------------------------------------------------------------
-# BigramModel
+# TrigramModel
 # ---------------------------------------------------------------------------
 
 
-def test_model_forward_shape() -> None:
-    model = BigramModel(VOCAB)
-    out = model(torch.tensor(3))
+def test_model_forward_shape_single() -> None:
+    model = TrigramModel(VOCAB)
+    out = model(torch.tensor([2, 5]))
     assert out.shape == (VOCAB,)
 
 
-def test_model_forward_row_lookup() -> None:
-    model = BigramModel(VOCAB)
-    token = 5
-    out = model(torch.tensor(token))
-    assert torch.equal(out, model.weight[token])
+def test_model_forward_row_lookup_single() -> None:
+    model = TrigramModel(VOCAB)
+    out = model(torch.tensor([1, 3]))
+    assert torch.equal(out, model.weight[1, 3])
+
+
+def test_model_forward_shape_batched() -> None:
+    model = TrigramModel(VOCAB)
+    out = model(torch.tensor([[2, 5], [0, 1]]))
+    assert out.shape == (2, VOCAB)
+
+
+def test_model_forward_row_lookup_batched() -> None:
+    model = TrigramModel(VOCAB)
+    x = torch.tensor([[1, 3], [0, 2]])
+    out = model(x)
+    assert torch.equal(out[0], model.weight[1, 3])
+    assert torch.equal(out[1], model.weight[0, 2])
 
 
 def test_model_single_parameter_group() -> None:
-    model = BigramModel(VOCAB)
+    model = TrigramModel(VOCAB)
     params = list(model.parameters())
     assert len(params) == 1
-    assert params[0].shape == (VOCAB, VOCAB)
+    assert params[0].shape == (VOCAB, VOCAB, VOCAB)
 
 
 # ---------------------------------------------------------------------------
@@ -50,31 +62,33 @@ def test_model_single_parameter_group() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_init_state_returns_policy_with_bigram_model(arch: BigramArchitecture) -> None:
+def test_init_state_returns_policy_with_trigram_model(
+    arch: TrigramArchitecture,
+) -> None:
     policy = arch.init_state(RNG0)
     assert isinstance(policy, Policy)
-    assert isinstance(policy.model, BigramModel)
+    assert isinstance(policy.model, TrigramModel)
 
 
-def test_init_state_weight_shape(arch: BigramArchitecture) -> None:
+def test_init_state_weight_shape(arch: TrigramArchitecture) -> None:
     policy = arch.init_state(RNG0)
-    assert isinstance(policy.model, BigramModel)
-    assert policy.model.weight.shape == (VOCAB, VOCAB)
+    assert isinstance(policy.model, TrigramModel)
+    assert policy.model.weight.shape == (VOCAB, VOCAB, VOCAB)
 
 
-def test_init_state_deterministic(arch: BigramArchitecture) -> None:
+def test_init_state_deterministic(arch: TrigramArchitecture) -> None:
     p1 = arch.init_state(RNG0)
     p2 = arch.init_state(RNG0)
-    assert isinstance(p1.model, BigramModel)
-    assert isinstance(p2.model, BigramModel)
+    assert isinstance(p1.model, TrigramModel)
+    assert isinstance(p2.model, TrigramModel)
     assert torch.equal(p1.model.weight, p2.model.weight)
 
 
-def test_init_state_different_seeds_differ(arch: BigramArchitecture) -> None:
+def test_init_state_different_seeds_differ(arch: TrigramArchitecture) -> None:
     p1 = arch.init_state(RNG(seed=1))
     p2 = arch.init_state(RNG(seed=2))
-    assert isinstance(p1.model, BigramModel)
-    assert isinstance(p2.model, BigramModel)
+    assert isinstance(p1.model, TrigramModel)
+    assert isinstance(p2.model, TrigramModel)
     assert not torch.equal(p1.model.weight, p2.model.weight)
 
 
@@ -83,8 +97,8 @@ def test_init_state_different_seeds_differ(arch: BigramArchitecture) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_context_length_is_one(arch: BigramArchitecture) -> None:
-    assert arch.context_length == 1
+def test_context_length_is_two(arch: TrigramArchitecture) -> None:
+    assert arch.context_length == 2
 
 
 # ---------------------------------------------------------------------------
@@ -92,19 +106,30 @@ def test_context_length_is_one(arch: BigramArchitecture) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_forward_logit_shape(arch: BigramArchitecture, policy: Policy) -> None:
-    tokens = torch.tensor([2, 5, 3])
+def test_forward_logit_shape(arch: TrigramArchitecture, policy: Policy) -> None:
+    tokens = torch.tensor([2, 5])
     output = arch.forward(policy, tokens)
     assert output.logits.shape == (VOCAB,)
     assert output.sampled_ids is None
 
 
-def test_forward_uses_last_token_only(arch: BigramArchitecture, policy: Policy) -> None:
-    tokens_short = torch.tensor([3])
-    tokens_long = torch.tensor([0, 1, 2, 3])
-    out_short = arch.forward(policy, tokens_short)
+def test_forward_uses_last_two_tokens(
+    arch: TrigramArchitecture, policy: Policy
+) -> None:
+    tokens_exact = torch.tensor([3, 7])
+    tokens_long = torch.tensor([0, 1, 2, 3, 7])
+    out_exact = arch.forward(policy, tokens_exact)
     out_long = arch.forward(policy, tokens_long)
-    assert torch.equal(out_short.logits, out_long.logits)
+    assert torch.equal(out_exact.logits, out_long.logits)
+
+
+def test_forward_different_pairs_differ(
+    arch: TrigramArchitecture, policy: Policy
+) -> None:
+    out_a = arch.forward(policy, torch.tensor([1, 2]))
+    out_b = arch.forward(policy, torch.tensor([2, 1]))
+    # Different token order → different logits (weight is not symmetric)
+    assert not torch.equal(out_a.logits, out_b.logits)
 
 
 # ---------------------------------------------------------------------------
@@ -112,8 +137,8 @@ def test_forward_uses_last_token_only(arch: BigramArchitecture, policy: Policy) 
 # ---------------------------------------------------------------------------
 
 
-def test_call_returns_sampled_ids(arch: BigramArchitecture, policy: Policy) -> None:
-    seq = torch.tensor([4])
+def test_call_returns_sampled_ids(arch: TrigramArchitecture, policy: Policy) -> None:
+    seq = torch.tensor([3, 4])
     output = arch.call(seq, policy, RNG0, temperature=1.0)
     assert isinstance(output, Output)
     assert output.sampled_ids is not None
@@ -121,9 +146,9 @@ def test_call_returns_sampled_ids(arch: BigramArchitecture, policy: Policy) -> N
 
 
 def test_call_deterministic_under_same_rng(
-    arch: BigramArchitecture, policy: Policy
+    arch: TrigramArchitecture, policy: Policy
 ) -> None:
-    seq = torch.tensor([4])
+    seq = torch.tensor([3, 4])
     rng = RNG(seed=99)
     r1 = arch.call(seq, policy, rng, temperature=1.0)
     r2 = arch.call(seq, policy, rng, temperature=1.0)
@@ -133,7 +158,7 @@ def test_call_deterministic_under_same_rng(
 
 
 def _multi_draw(
-    arch: BigramArchitecture,
+    arch: TrigramArchitecture,
     policy: Policy,
     seq: torch.Tensor,
     temperature: float,
@@ -141,7 +166,6 @@ def _multi_draw(
     top_k: int | None = None,
     top_p: float | None = None,
 ) -> list[int]:
-    """Draw n samples, splitting the RNG on each call to get independent results."""
     rng = RNG(seed=42)
     draws = []
     for _ in range(n):
@@ -153,7 +177,7 @@ def _multi_draw(
 
 
 def _draw(
-    arch: BigramArchitecture,
+    arch: TrigramArchitecture,
     policy: Policy,
     seq: torch.Tensor,
     temperature: float,
@@ -166,33 +190,32 @@ def _draw(
 
 
 def test_call_low_temperature_concentrates(
-    arch: BigramArchitecture, policy: Policy
+    arch: TrigramArchitecture, policy: Policy
 ) -> None:
-    seq = torch.tensor([0])
+    seq = torch.tensor([0, 1])
     draws = _multi_draw(arch, policy, seq, temperature=0.01, n=50)
-    # At very low temperature the argmax dominates; at most 2 distinct values expected
     assert len(set(draws)) <= 2
 
 
 def test_call_high_temperature_spreads(
-    arch: BigramArchitecture, policy: Policy
+    arch: TrigramArchitecture, policy: Policy
 ) -> None:
-    seq = torch.tensor([0])
+    seq = torch.tensor([0, 1])
     draws = _multi_draw(arch, policy, seq, temperature=100.0, n=200)
     assert len(set(draws)) > 2
 
 
-def test_call_top_k_1_returns_argmax(arch: BigramArchitecture, policy: Policy) -> None:
-    seq = torch.tensor([2])
+def test_call_top_k_1_returns_argmax(arch: TrigramArchitecture, policy: Policy) -> None:
+    seq = torch.tensor([2, 5])
     expected = int(arch.forward(policy, seq).logits.argmax().item())
     for _ in range(20):
         assert _draw(arch, policy, seq, temperature=1.0, top_k=1) == expected
 
 
 def test_call_top_p_zero_returns_argmax(
-    arch: BigramArchitecture, policy: Policy
+    arch: TrigramArchitecture, policy: Policy
 ) -> None:
-    seq = torch.tensor([7])
+    seq = torch.tensor([7, 3])
     expected = int(arch.forward(policy, seq).logits.argmax().item())
     for _ in range(20):
         assert _draw(arch, policy, seq, temperature=1.0, top_p=0.0) == expected
@@ -203,33 +226,6 @@ def test_call_top_p_zero_returns_argmax(
 # ---------------------------------------------------------------------------
 
 
-def test_explain_returns_empty_dict(arch: BigramArchitecture, policy: Policy) -> None:
-    seq = torch.tensor([1])
+def test_explain_returns_empty_dict(arch: TrigramArchitecture, policy: Policy) -> None:
+    seq = torch.tensor([1, 2])
     assert arch.explain(seq, policy) == {}
-
-
-# ---------------------------------------------------------------------------
-# sample helper (shared, lives in architectures.sampling)
-# ---------------------------------------------------------------------------
-
-
-def test_sampling_top_k_1_returns_argmax() -> None:
-    logits = torch.tensor([0.1, 5.0, 0.2, 0.3])
-    result = sample(logits, temperature=1.0, top_k=1, top_p=None)
-    assert int(result.item()) == int(logits.argmax().item())
-
-
-def test_sampling_top_p_zero_returns_argmax() -> None:
-    logits = torch.tensor([0.1, 5.0, 0.2, 0.3])
-    result = sample(logits, temperature=1.0, top_k=None, top_p=0.0)
-    assert int(result.item()) == int(logits.argmax().item())
-
-
-def test_sampling_no_filters_samples_full_range() -> None:
-    torch.manual_seed(42)
-    logits = torch.ones(10)
-    draws = {
-        int(sample(logits, temperature=1.0, top_k=None, top_p=None).item())
-        for _ in range(200)
-    }
-    assert len(draws) > 5

@@ -4,6 +4,9 @@ active = "bigram"
 # No architecture-specific hyperparameters — vocab_size comes from the tokenizer artifact
 [architecture.bigram]
 
+# No architecture-specific hyperparameters — vocab_size comes from the tokenizer artifact
+[architecture.trigram]
+
 [architecture.mlp]
 embedding_dim = 32
 context_length = 8

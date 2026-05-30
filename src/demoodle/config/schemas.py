@@ -16,6 +16,10 @@ class BigramConfig(StrictModel):
     """Bigram architecture config — vocab_size comes from the tokenizer artifact."""
 
 
+class TrigramConfig(StrictModel):
+    """Trigram architecture config — vocab_size comes from the tokenizer artifact."""
+
+
 class MLPConfig(StrictModel):
     """Bengio-style MLP architecture config."""
 
@@ -39,6 +43,7 @@ class ArchitecturesConfig(StrictModel):
 
     active: str
     bigram: BigramConfig
+    trigram: TrigramConfig
     mlp: MLPConfig
     transformer: TransformerConfig
 

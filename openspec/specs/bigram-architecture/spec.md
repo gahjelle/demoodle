@@ -64,12 +64,12 @@ The system SHALL provide `BigramModel(nn.Module)` in `demoodle.architectures.big
 - **THEN** there is exactly one parameter with shape `(vocab_size, vocab_size)`
 
 ### Requirement: Sampling helper is available as a module-level pure function
-The system SHALL provide `_sample(logits, temperature, top_k, top_p, generator) -> torch.Tensor` in `demoodle.architectures.bigram`. It SHALL be a pure function: given the same inputs and generator state, it returns the same token id.
+The system SHALL provide `sample(logits, temperature, top_k, top_p, generator) -> torch.Tensor` in `demoodle.architectures.sampling` (not in `demoodle.architectures.bigram`). It SHALL be a pure function: given the same inputs and generator state, it returns the same token id. `demoodle.architectures.bigram` SHALL import and use `sample` from `demoodle.architectures.sampling`.
 
-#### Scenario: _sample with temperature=1 and no filters samples from full distribution
-- **WHEN** `_sample` is called with `top_k=None, top_p=None, temperature=1.0`
+#### Scenario: sample with temperature=1 and no filters samples from full distribution
+- **WHEN** `sample` is called with `top_k=None, top_p=None, temperature=1.0`
 - **THEN** any token id in `[0, vocab_size)` can be returned (no hard exclusions)
 
-#### Scenario: _sample with top_k=1 always returns argmax
-- **WHEN** `_sample` is called with `top_k=1`
+#### Scenario: sample with top_k=1 always returns argmax
+- **WHEN** `sample` is called with `top_k=1`
 - **THEN** the returned tensor equals `logits.argmax()`

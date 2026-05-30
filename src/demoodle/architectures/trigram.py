@@ -1,4 +1,4 @@
-"""Learned-bigram architecture: a V x V weight matrix as the entire model."""
+"""Trigram architecture: a VxVxV weight tensor predicting from the last two tokens."""
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -13,35 +13,40 @@ if TYPE_CHECKING:
     from demoodle.core.rng import RNG
 
 
-class BigramModel(nn.Module):
-    """V x V parameter: row N is the next-token distribution after seeing token N."""
+class TrigramModel(nn.Module):
+    """VxVxV weight tensor: table[t_prev, t_cur] gives the next-token distribution."""
 
     def __init__(self, vocab_size: int) -> None:
-        """Initialise with a zero-filled (vocab_size, vocab_size) weight matrix."""
+        """Initialise with a zero-filled (V, V, V) weight tensor."""
         super().__init__()
-        self.weight = nn.Parameter(torch.zeros(vocab_size, vocab_size))
+        self.weight = nn.Parameter(torch.zeros(vocab_size, vocab_size, vocab_size))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Return the row of the weight matrix corresponding to token x."""
-        return self.weight[x]
+        """Return logits for the next token.
+
+        x: shape (2,) for a single context pair, or (batch, 2) for batched training.
+        """
+        if x.ndim == 1:
+            return self.weight[x[0], x[1]]
+        return self.weight[x[:, 0], x[:, 1]]
 
 
 @dataclass(frozen=True)
-class BigramArchitecture:
-    """V x V weight-matrix model. Stateless: no Policy held internally."""
+class TrigramArchitecture:
+    """VxVxV weight-tensor model. Stateless: no Policy held internally."""
 
     vocab_size: int
-    context_length: int = 1
+    context_length: int = 2
 
     def init_state(self, rng: RNG) -> Policy:
         """Return a freshly initialised Policy. Pure function of rng."""
-        model = BigramModel(self.vocab_size)
+        model = TrigramModel(self.vocab_size)
         nn.init.normal_(model.weight, generator=rng.generator())
         return Policy(model=model)
 
     def forward(self, policy: Policy, tokens: Seq) -> Output:
-        """Run a forward pass using only the last token."""
-        logits: torch.Tensor = policy.model(tokens[-1])
+        """Run a forward pass using the last two tokens."""
+        logits: torch.Tensor = policy.model(tokens[-2:])
         return Output(logits=logits)
 
     def call(
@@ -59,5 +64,5 @@ class BigramArchitecture:
         return Output(logits=output.logits, sampled_ids=sampled)
 
     def explain(self, seq: Seq, policy: Policy) -> dict[str, Any]:  # noqa: ARG002
-        """Return interpretability data; bigram has none."""
+        """Return interpretability data; trigram has none."""
         return {}
